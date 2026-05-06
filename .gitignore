@@ -1,0 +1,28 @@
+# Runtime/log files
+*.log
+*.tmp
+*.bak
+*.old
+
+# XAMPP generated files
+xampp-control.ini
+xampp-control.log
+release_cleanup_report.txt
+cleanup-master*.ps1
+
+# Runtime folders
+apache/logs/*
+tmp/*
+temp/*
+
+# Optional PHP versions should be separate release downloads
+php_versions/*
+!php_versions/
+!php_versions/8.5.5/
+!php_versions/8.5.5/**
+!php_versions/.gitkeep
+
+# ZIP/build packages
+*.zip
+*.7z
+*.rar

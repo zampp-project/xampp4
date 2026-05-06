@@ -1,0 +1,126 @@
+﻿XAMPP Windows 11 Smart App Control / SmartScreen Unblock Help
+=============================================================
+
+Purpose
+-------
+Some Windows 11 systems, including Windows 11 25H2, may block xampp-control.exe,
+setup_xampp.bat, PHP executables, or other XAMPP files after the package has
+been downloaded, extracted, moved, or copied to another folder or drive.
+
+This can happen because Windows attaches a security marker called
+"Mark of the Web" / "Zone.Identifier" to files that came from the internet or
+from another computer. Smart App Control or SmartScreen may then block files
+from running, even if the XAMPP files are safe and were intentionally installed.
+
+The unblock helper script removes that Windows security marker from the XAMPP
+folder so the local XAMPP package can run normally.
+
+Included Helper Script
+----------------------
+Recommended script name:
+
+    unblock_xampp.ps1
+
+If your package uses this alternate name:
+
+    unblockzampp.ps1
+
+the instructions are the same. Just replace unblock_xampp.ps1 with
+unblockzampp.ps1 in the command below.
+
+When To Use This
+----------------
+Run the unblock helper if you see a Windows message such as:
+
+    This app has been blocked for your protection
+
+or:
+
+    Smart App Control blocked part of this app
+
+or if XAMPP works in one folder but gets blocked after being moved to a
+different folder or drive.
+
+Where To Put The Script
+-----------------------
+Place the unblock script in the main XAMPP folder, beside:
+
+    xampp-control.exe
+    setup_xampp.bat
+    apache\
+    mysql\
+    php_versions\
+
+Example:
+
+    D:\\xampp\unblock_xampp.ps1
+    D:\\xampp\unblock_xampp.ps1
+    C:\\Users\\YourName\Desktop\xampp\unblock_xampp.ps1
+
+How To Run It
+-------------
+1. Open the XAMPP folder.
+2. Click in the address bar.
+3. Type:
+
+       powershell
+
+4. Press Enter.
+5. In the PowerShell window, run:
+
+       powershell.exe -ExecutionPolicy Bypass -File ".\unblock_xampp.ps1"
+
+If your script is named unblockzampp.ps1 instead, run:
+
+       powershell.exe -ExecutionPolicy Bypass -File ".\unblockzampp.ps1"
+
+What It Does
+------------
+The script scans the current XAMPP folder and its subfolders, then runs
+Unblock-File against each file.
+
+It does not delete XAMPP files.
+It does not change Apache, MySQL, PHP, or phpMyAdmin configuration.
+It does not install anything.
+It only removes Windows file-blocking metadata from the local XAMPP folder.
+
+After Running
+-------------
+After the unblock script finishes:
+
+1. Close the PowerShell window.
+2. Right-click xampp-control.exe.
+3. Choose "Run as administrator".
+4. Start Apache and MySQL normally.
+
+Important Notes
+---------------
+- Run the script from the XAMPP root folder.
+- If you move the XAMPP folder to another drive or folder later, you may need to
+  run the unblock script again.
+- Administrator rights are usually not required for unblocking files in a
+  user-writable folder, but running as administrator can help if XAMPP is stored
+  in a protected location.
+- This is a Windows security/unblock helper only. It does not replace
+  setup_xampp.bat or the XAMPP Control Panel first-run setup.
+
+Troubleshooting
+---------------
+If PowerShell says scripts are disabled, use the full command:
+
+    powershell.exe -ExecutionPolicy Bypass -File ".\unblock_xampp.ps1"
+
+If Windows still blocks the application after running the script:
+
+1. Make sure the script was run from the correct XAMPP folder.
+2. Run the script again as administrator.
+3. Check whether your antivirus or enterprise security policy is blocking the files.
+4. If using a company-managed PC, Smart App Control or security policy may still
+   block unsigned programs.
+
+Recommended Final Release Note
+------------------------------
+For the smoothest user experience, the final XAMPP package should eventually use
+a signed xampp-control.exe or a signed installer. The unblock script is a helper
+for users who are blocked by Windows security metadata after download, extraction,
+copying, or moving the folder.

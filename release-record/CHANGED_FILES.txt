@@ -1,0 +1,177 @@
+March 31, 2026
+ 
+
+Result:
+- setup_xampp.bat -> install/install.php uses the same manifest target list in both archives.
+- The rewrite target list did not change between the old and new XAMPP archives I inspected.
+- Manifest counts in both archives:
+  - slashrootreal: 15
+  - backslashrootreal: 98
+  - doublebackslashrootreal: 3
+  - xamppserver.inc backslashrootreal: 2
+
+Old component baseline
+- apache_OLD: 2.4.58
+- mysql_OLD: 10.4.32
+- php_OLD: 8.2.12
+- phpMyAdmin_OLD: 5.2.1
+
+New component baseline
+- apache: 2.4.66
+- mysql: 11.8.6
+- php: 8.5.4
+- phpMyAdmin: 5.2.3
+
+Tree list of files setup_xampp.bat/install/install.php rewrites via the manifests
+xampp
+├─ FileZillaFTP
+│  └─ FileZilla Server.xml
+├─ MercuryMail
+│  └─ MERCURY.INI
+├─ apache
+│  ├─ bin
+│  │  ├─ apr-1-config.bat
+│  │  ├─ apr-config.bat
+│  │  ├─ apr-config.pl
+│  │  ├─ apu-1-config.bat
+│  │  ├─ apu-config.bat
+│  │  ├─ apu-config.pl
+│  │  ├─ apxs.bat
+│  │  ├─ apxs.pl
+│  │  └─ php.ini
+│  └─ conf
+│     ├─ extra
+│     │  ├─ httpd-autoindex.conf
+│     │  ├─ httpd-dav.conf
+│     │  ├─ httpd-default.conf
+│     │  ├─ httpd-info.conf
+│     │  ├─ httpd-languages.conf
+│     │  ├─ httpd-manual.conf
+│     │  ├─ httpd-mpm.conf
+│     │  ├─ httpd-multilang-errordoc.conf
+│     │  ├─ httpd-ssl.conf
+│     │  ├─ httpd-userdir.conf
+│     │  ├─ httpd-vhosts.conf
+│     │  └─ httpd-xampp.conf
+│     └─ httpd.conf
+├─ cgi-bin
+│  ├─ cgi.cgi
+│  ├─ perltest.cgi
+│  └─ printenv.pl
+├─ htdocs
+│  └─ xampp
+│     ├─ .htaccess
+│     ├─ guestbook-de.pl
+│     ├─ guestbook-en.pl
+│     ├─ guestbook-es.pl
+│     ├─ guestbook-fr.pl
+│     ├─ guestbook-it.pl
+│     ├─ guestbook-jp.pl
+│     ├─ guestbook-nl.pl
+│     ├─ guestbook-no.pl
+│     ├─ guestbook-pl.pl
+│     ├─ guestbook-pt.pl
+│     ├─ guestbook-pt_br.pl
+│     ├─ guestbook-sl.pl
+│     ├─ guestbook-zh.pl
+│     ├─ perl.pl
+│     └─ perlinfo.pl
+├─ mysql
+│  └─ bin
+│     └─ my.ini
+├─ perl
+│  ├─ bin
+│  │  ├─ c2ph.bat
+│  │  ├─ config_data.bat
+│  │  ├─ find2perl.bat
+│  │  ├─ h2ph.bat
+│  │  ├─ h2xs.bat
+│  │  ├─ htmltree.bat
+│  │  ├─ json_pp.bat
+│  │  ├─ libnetcfg.bat
+│  │  ├─ perlbug.bat
+│  │  ├─ perlivp.bat
+│  │  ├─ perlthanks.bat
+│  │  ├─ pl2pm.bat
+│  │  ├─ pod2html.bat
+│  │  ├─ pod2latex
+│  │  ├─ pod2latex.bat
+│  │  ├─ psed.bat
+│  │  ├─ pstruct.bat
+│  │  ├─ s2p.bat
+│  │  └─ splain.bat
+│  └─ lib
+│     ├─ CORE
+│     │  └─ config.h
+│     ├─ CPAN
+│     │  └─ Config.pm
+│     ├─ Config.pm
+│     └─ Config_heavy.pl perl\vendor\lib\ppm.xml   [malformed manifest entry present in both archives]
+├─ php
+│  ├─ PEAR
+│  │  ├─ Console/CommandLine/XmlParser.php
+│  │  ├─ DB/DataObject/createTables.php
+│  │  ├─ PHPUnit/Util/PHP.php
+│  │  ├─ PhpDocumentor/phpDocumentor/Converter.inc
+│  │  ├─ PhpDocumentor/phpDocumentor/IntermediateParser.inc
+│  │  ├─ PhpDocumentor/phpDocumentor/Setup.inc.php
+│  │  ├─ PhpDocumentor/phpDocumentor/common.inc.php
+│  │  └─ docs/examples/example.php
+│  ├─ Text/Highlighter/generate.bat
+│  ├─ compatinfo.bat
+│  ├─ dbunit
+│  ├─ dbunit.bat
+│  ├─ pci
+│  ├─ pci.bat
+│  ├─ pciconf
+│  ├─ pciconf.bat
+│  ├─ pear/PhpDocumentor/phpDocumentor/IntermediateParser.inc
+│  ├─ pear/PhpDocumentor/phpDocumentor/common.inc.php
+│  ├─ pear/go-pear.phar
+│  ├─ pear/pearcmd.php
+│  ├─ pear/peclcmd.php
+│  ├─ pear.bat
+│  ├─ pear.ini
+│  ├─ peardev.bat
+│  ├─ pecl.bat
+│  ├─ phing.bat
+│  ├─ php-pear.ini
+│  ├─ php.ini
+│  ├─ php4/php.ini
+│  ├─ php4/php4.ini
+│  ├─ php5.ini
+│  ├─ php_beautifier.bat
+│  ├─ phpcov
+│  ├─ phpcov.bat
+│  ├─ phpcs
+│  ├─ phpcs.bat
+│  ├─ phpdoc
+│  ├─ phpdoc.bat
+│  ├─ phptok
+│  ├─ phptok.bat
+│  ├─ phpuml
+│  ├─ phpunit
+│  ├─ phpunit.bat
+│  ├─ procwatch-lint.cmd
+│  ├─ procwatch.cmd
+│  ├─ scripts/phpcs-svn-pre-commit
+│  └─ t2xmlchk.php
+├─ security
+│  └─ htdocs
+│     └─ .htaccess
+└─ webalizer
+   └─ webalizer.conf
+
+Startup-critical subset from that tree
+- apache/conf/httpd.conf
+- apache/conf/extra/httpd-xampp.conf
+- apache/conf/extra/httpd-ssl.conf
+- mysql/bin/my.ini
+- php/php.ini
+
+Notes
+- install/install.php also creates or updates install/install.sys.
+- install/install.php also contains stale legacy copy logic around php.ini files and Tomcat workers.properties, but the manifest tree above is the direct rewrite list.
+
+
+
