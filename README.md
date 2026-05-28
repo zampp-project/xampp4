@@ -61,9 +61,9 @@ This release includes:
    Recommended examples:
 
    ```text
-   D:\\xampp
-   D:\\xampp
-   D:\\xampp
+   D:\xampp
+   D:\xampp
+   D:\xampp
 ```
 
 3. Do **not** extract over an existing XAMPP folder.
