@@ -5,7 +5,7 @@ http://www.microsoft.com/en-us/download/. Bitte stellen Sie sicher das die VC++ 
 Runtime Bibliothek auf Ihrem System installiert ist.
 
   + Apache 2.4.67
-  + MariaDB 11.8.6
+  + MariaDB 12.3.2
   + PHP 8.5.6 (VS16 X86 64bit thread safe) + PEAR
   + phpMyAdmin 5.2.3
   + OpenSSL 3.6.1

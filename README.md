@@ -1,6 +1,6 @@
-# XAMPP 4.0.0 Modernized
+# XAMPP 4.0.1 Modernized
 
-**XAMPP 4.0.0 Modernized** is a Windows-focused XAMPP package with a refreshed dashboard, improved first-run setup, and PHP version management built into the XAMPP Control Panel.
+**XAMPP 4.0.1 Modernized** is a Windows-focused XAMPP package with a refreshed dashboard, improved first-run setup, and PHP version management built into the XAMPP Control Panel.
 
 This project keeps the familiar XAMPP layout while adding modern usability improvements, including a PHP version dropdown, optional PHP add-on support, cleaner release packaging, and a better first-run experience.
 
@@ -26,7 +26,7 @@ The main repository contains the project files, while regular users should downl
 
 The latest public release is available from the **GitHub Releases** page.
 
-**Current release:** XAMPP 4.0.0 Modernized with PHP 8.5.5 bundled by default.
+**Current release:** XAMPP 4.0.1 Modernized with PHP 8.5.6 bundled by default.
 
 Download the main XAMPP ZIP from the release assets, extract it to a clean folder, and run:
 
@@ -51,7 +51,7 @@ This release includes:
 - FileZilla FTP
 - Tomcat
 - Perl
-- PHP 8.5.5 as the default bundled PHP version
+- PHP 8.5.6 as the default bundled PHP version
 - Modernized XAMPP dashboard
 - Runtime Overview dashboard card
 - Installed PHP versions dashboard display
@@ -82,14 +82,14 @@ The dashboard can display:
 Current Versions:
 
 ```text
-Apache                  2.4.66
-Apache cURL runtime     8.19.0
+Apache                  2.4.67
+Apache cURL runtime     8.20.0
 phpMyAdmin              5.2.3
-PHP                     8.5.5
-PHP cURL                8.19.0
+PHP                     8.5.6
+PHP cURL                8.20.0
 MySQL cURL runtime      8.19.0
-MariaDB                 11.8.6-MariaDB
-Installed PHP versions  8.5.5
+MariaDB                 12.3.2-MariaDB
+Installed PHP versions  8.5.6
 ```
 
 The active PHP version is marked automatically.
@@ -160,12 +160,12 @@ Do not manually create or edit the `php/` folder before first run.
 
 ## PHP Version Setup
 
-PHP 8.5.5 is included as the default bundled PHP version.
+PHP 8.5.6 is included as the default bundled PHP version.
 
 It is stored in:
 
 ```text
-php_versions/8.5.5/
+php_versions/8.5.6/
 ```
 
 The active PHP folder is:
@@ -187,7 +187,7 @@ can also prepare the active PHP folder if needed.
 Default bundled PHP version:
 
 ```text
-PHP 8.5.5
+PHP 8.5.6
 ```
 
 ---
@@ -219,11 +219,12 @@ These add-ons allow you to add more PHP versions without downloading the full XA
 | PHP 8.2.12 | `php-8.2.12-addon.zip` | PHP 8.2 testing/support |
 | PHP 8.4.20 | `php-8.4.20-addon.zip` | PHP 8.4 testing/support |
 | PHP 8.5.4 | `php-8.5.4-addon.zip` | Compatibility/testing with PHP 8.5.4 |
+| PHP 8.5.5 | `php-8.5.5-addon.zip` | Compatibility/testing with PHP 8.5.5 |
 | PHP 8.5.6 | `php-8.5.6-addon.zip` | Compatibility/testing with PHP 8.5.6 |
 
-PHP 8.5.5 is already bundled with the main package. You only need to download a PHP add-on if you want to add another PHP version.
+PHP 8.5.6 is already bundled with the main package. You only need to download a PHP add-on if you want to add another PHP version.
 
-> PHP 8.5.6 is available as an optional add-on. The main XAMPP 4.0.0 package still bundles PHP 8.5.5 by default.
+> PHP 8.5.6 is available as an optional add-on. The main XAMPP 4.0.1 package still bundles PHP 8.5.6 by default.
 
 PHP 8.5.6 was added as:
 
@@ -233,7 +234,7 @@ php-8.5.6-addon.zip
 
 on 05/30/2026.
 
-As newer PHP versions are released, they may be added as optional add-ons. PHP 8.5.5 remains the bundled stack version for the main XAMPP 4.0.0 package.
+As newer PHP versions are released, they may be added as optional add-ons. PHP 8.5.6 remains the bundled stack version for the main XAMPP 4.0.1 package.
 
 ---
 
@@ -365,13 +366,13 @@ Do not download individual files manually unless you are modifying or contributi
 Download the main package from the release assets:
 
 ```text
-xampp-modernized-4.0.0-windows.zip
+xampp-modernized-4.0.1-windows.zip
 ```
 
 The main package includes:
 
 ```text
-php_versions/8.5.5/
+php_versions/8.5.6/
 ```
 
 Additional PHP versions are separate optional downloads.
