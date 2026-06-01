@@ -722,10 +722,10 @@ public:
                                            FbtImpl::binary_length(), &my_charset_bin);
     }
 
-    uchar *pack(uchar *to, const uchar *from, uint max_length) override
+    uchar *pack(uchar *to, const uchar *from) const override
     {
       DBUG_PRINT("debug", ("Packing field '%s'", field_name.str));
-      return FbtImpl::pack(to, from, max_length);
+      return FbtImpl::pack(to, from);
     }
 
     const uchar *unpack(uchar *to, const uchar *from, const uchar *from_end,
@@ -734,14 +734,15 @@ public:
       return FbtImpl::unpack(to, from, from_end, param_data);
     }
 
-    uint max_packed_col_length(uint max_length) override
+    uint max_packed_col_length(uint max_length) const override
     {
       return StringPack::max_packed_col_length(max_length);
     }
 
-    uint packed_col_length(const uchar *fbt_ptr, uint length) override
+    uint packed_col_length() const override
     {
-      return StringPack::packed_col_length(fbt_ptr, length);
+      return StringPack(&my_charset_bin, pack_length()).
+               packed_col_length(ptr);
     }
 
     uint size_of() const override { return sizeof(*this); }
@@ -1117,6 +1118,9 @@ public:
   {
     return FbtImpl::default_value();
   }
+
+  uint get_column_attributes() const override { return ATTR_NONE; }
+
   ulong KEY_pack_flags(uint column_nr) const override
   {
     return FbtImpl::KEY_pack_flags(column_nr);
@@ -1188,6 +1192,7 @@ public:
 
   bool is_scalar_type() const override { return true; }
   bool is_val_native_ready() const override { return true; }
+  bool can_return_bool() const override { return true; }
   bool can_return_int() const override { return false; }
   bool can_return_decimal() const override { return false; }
   bool can_return_real() const override { return false; }
@@ -1392,7 +1397,7 @@ public:
     NativeBuffer<FbtImpl::binary_length()+1> tmp;
     item->val_native(current_thd, &tmp);
   }
-  bool Item_save_in_value(THD *thd, Item *item, st_value *value) const override
+  void Item_save_in_value(THD *thd, Item *item, st_value *value) const override
   {
     value->m_type= DYN_COL_STRING;
     String *str= item->val_str(&value->m_string);
@@ -1409,12 +1414,12 @@ public:
         thd->push_warning_wrong_value(Sql_condition::WARN_LEVEL_WARN,
                                       name().ptr(), ErrConvString(str).ptr());
         value->m_type= DYN_COL_NULL;
-        return true;
+        return;
       }
       // "item" returned a non-NULL value, and it was a valid FBT
       value->m_string.set(str->ptr(), str->length(), str->charset());
     }
-    return check_null(item, value);
+    set_null_if_needed(item, value);
   }
   void Item_param_setup_conversion(THD *thd, Item_param *param) const override
   {
@@ -1938,6 +1943,17 @@ public:
   {
     static Type_handler_fbt th;
     return &th;
+  }
+  bool is_supertype(const Type_std_attributes &dst_std_attr,
+                    const Type_extra_attributes &dst_extra_attr,
+                    const Type_handler *src_th,
+                    const Type_std_attributes &src_std_attr,
+                    const Type_extra_attributes &src_extra_attr) const override
+  {
+    if (this != src_th)
+      return false;
+    DBUG_ASSERT(dst_std_attr.max_length == src_std_attr.max_length);
+    return true;
   }
 };
 

@@ -9,15 +9,15 @@ my @urllist = (
   'http://www.cpan.org/',
 );
 
-if ( -d 'D:D:\\xampp4\\minicpan' ) {
+if ( -d 'D:D:F:F:\\test-public-modernized-4.0.0-windows4\\minicpan' ) {
   # If we are on fake Hotel/Airport wireless,
   # prefer the minicpan to the poisoned wireless.
   eval { require LWP::Online; };
   unless ( $@ ) {
     if ( LWP::Online::online() ) {
-      push @urllist, q[file:///D:D:/xampp4/minicpan/];
+      push @urllist, q[file:///D:D:F:F:/test-public-modernized-4.0.0-windows4/minicpan/];
     } else {
-      unshift @urllist, q[file:///D:D:/xampp4/minicpan/];
+      unshift @urllist, q[file:///D:D:F:F:/test-public-modernized-4.0.0-windows4/minicpan/];
     }
   }
 }
@@ -26,7 +26,7 @@ $CPAN::Config = {
   applypatch                    => q[],
   auto_commit                   => q[1],
   build_cache                   => q[50],
-  build_dir                     => q[D:D:\\xampp4\\cpan\\build],
+  build_dir                     => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\cpan\\build],
   build_dir_reuse               => q[0],
   build_requires_install_policy => q[yes],
   bzip2                         => q[ ], #will use perl module if it is ' '
@@ -37,7 +37,7 @@ $CPAN::Config = {
   colorize_output               => q[0],
   commandnumber_in_prompt       => q[0],
   connect_to_internet_ok        => q[1],
-  cpan_home                     => q[D:D:\\xampp4\\cpan],
+  cpan_home                     => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\cpan],
   curl                          => q[],
   ftp                           => q[C:\\Windows\\system32\\ftp.exe],
   ftp_passive                   => q[1],
@@ -46,19 +46,19 @@ $CPAN::Config = {
   gpg                           => q[],
   gzip                          => q[ ], #will use perl module if it is ' '
   halt_on_failure               => q[1],
-  histfile                      => q[D:D:\\xampp4\\cpan\\histfile],
+  histfile                      => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\cpan\\histfile],
   histsize                      => q[1000],
   http_proxy                    => q[],
   inactivity_timeout            => q[0],
   index_expire                  => q[1],
   inhibit_startup_message       => q[0],
-  keep_source_where             => q[D:D:\\xampp4\\cpan\\sources],
+  keep_source_where             => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\cpan\\sources],
   load_module_verbosity         => q[none],
   lynx                          => q[],
-  make                          => q[D:D:\\xampp4\\c\\bin\\gmake.exe],
+  make                          => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\c\\bin\\gmake.exe],
   make_arg                      => q[],
   make_install_arg              => q[UNINST=1],
-  make_install_make_command     => q[D:D:\\xampp4\\c\\bin\\gmake.exe],
+  make_install_make_command     => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\c\\bin\\gmake.exe],
   makepl_arg                    => q[],
   mbuild_arg                    => q[],
   mbuild_install_arg            => q[--uninst 1],
@@ -67,11 +67,11 @@ $CPAN::Config = {
   ncftpget                      => q[],
   no_proxy                      => q[],
   pager                         => q[C:\\Windows\\system32\\more.COM],
-  patch                         => q[D:D:\\xampp4\\c\\bin\\patch.exe],
+  patch                         => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\c\\bin\\patch.exe],
   perl5lib_verbosity            => q[none],
   prefer_external_tar           => q[0],
   prefer_installer              => q[MB],
-  prefs_dir                     => q[D:D:\\xampp4\\cpan\\prefs],
+  prefs_dir                     => q[D:D:F:F:\\test-public-modernized-4.0.0-windows4\\cpan\\prefs],
   prerequisites_policy          => q[follow],
   recommends_policy             => q[1],
   scan_cache                    => q[atstart],

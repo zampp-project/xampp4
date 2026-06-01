@@ -128,6 +128,8 @@ class Session_sysvars_tracker: public State_tracker
     sys_var *m_svar;
     bool *test_load;
     bool m_changed;
+    bool skip_plugin_lock;
+    bool skip_global_lock;
   };
 
   class vars_list
@@ -483,6 +485,7 @@ class Session_tracker
   {
   public:
     void mark_as_changed(THD *thd) {}
+    void mark_all_as_changed(THD *thd) {}
     void mark_as_changed(THD *thd, const sys_var *var) {}
   };
 public:

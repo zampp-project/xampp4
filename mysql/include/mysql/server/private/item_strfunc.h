@@ -105,6 +105,8 @@ public:
    :Item_str_ascii_func(thd, a) { }
   Item_str_ascii_checksum_func(THD *thd, Item *a, Item *b)
    :Item_str_ascii_func(thd, a, b) { }
+  Item_str_ascii_checksum_func(THD *thd, Item *a, Item *b, Item *c)
+   :Item_str_ascii_func(thd, a, b, c) { }
   bool eq(const Item *item, const Eq_config &config) const override
   {
     // Always use binary argument comparison: MD5('x') != MD5('X')
@@ -362,6 +364,8 @@ public:
 
 class Item_func_concat :public Item_str_func
 {
+  bool check_arguments() const override
+  { return check_argument_types_can_return_str(0, arg_count); }
 protected:
   String tmp_value;
   /*
@@ -402,6 +406,8 @@ protected:
 */
 class Item_func_concat_operator_oracle :public Item_func_concat
 {
+  bool check_arguments() const override
+  { return check_argument_types_can_return_str(0, arg_count); }
 public:
   Item_func_concat_operator_oracle(THD *thd, List<Item> &list)
    :Item_func_concat(thd, list)
@@ -455,6 +461,8 @@ protected:
 
 class Item_func_concat_ws :public Item_str_func
 {
+  bool check_arguments() const override
+  { return check_argument_types_can_return_str(0, arg_count); }
   String tmp_value;
 public:
   Item_func_concat_ws(THD *thd, List<Item> &list): Item_str_func(thd, list) {}
@@ -881,7 +889,11 @@ protected:
     if (length == 0)
       return make_empty_result(&tmp_value);
 
-    tmp_value.set(*res, offset, length);
+    if (tmp_value.copy(res->ptr() + offset, length, res->charset()))
+    {
+      my_error(ER_OUTOFMEMORY, length);
+      return NULL;
+    }
     /*
       Make sure to return correct charset and collation:
       TRIM(0x000000 FROM _ucs2 0x0061)
@@ -1287,6 +1299,9 @@ public:
     base_flags&= ~item_base_t::MAYBE_NULL;
     return FALSE;
   }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
 
 protected:
   Item *shallow_copy(THD *thd) const override
@@ -1361,6 +1376,34 @@ protected:
   { return get_item_copy<Item_func_current_user>(thd, this); }
 };
 
+
+class Item_func_current_path :public Item_func_sysconst
+{
+public:
+  Item_func_current_path(THD *thd): Item_func_sysconst(thd) {}
+  String *val_str(String *) override;
+  bool fix_length_and_dec(THD *thd) override
+  {
+    max_length=32767;
+    return FALSE;
+  }
+  LEX_CSTRING func_name_cstring() const override
+  {
+    static LEX_CSTRING name= {STRING_WITH_LEN("current_path") };
+    return name;
+  }
+  const Lex_ident_routine fully_qualified_func_name() const override
+  { return Lex_ident_routine("current_path()"_LEX_CSTRING); }
+  bool check_vcol_func_processor(void *arg) override
+  {
+    return mark_unsupported_function(fully_qualified_func_name().str, arg,
+                                     VCOL_SESSION_FUNC);
+  }
+  Item *shallow_copy(THD *thd) const override
+  { return get_item_copy<Item_func_current_path>(thd, this); }
+};
+
+
 class Item_func_session_user :public Item_func_user
 {
 public:
@@ -1416,6 +1459,9 @@ public:
 protected:
   Item *shallow_copy(THD *thd) const override
   { return get_item_copy<Item_func_current_role>(thd, this); }
+  // null do not depend on nullability of the argument
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
 };
 
 
@@ -2019,6 +2065,7 @@ public:
     return name;
   }
   String *val_str(String *) override;
+  table_map not_null_tables() const override { return 0; }
   bool fix_length_and_dec(THD *thd) override
   {
     collation.set(args[0]->collation);
@@ -2138,6 +2185,8 @@ protected:
 class Item_func_set_collation :public Item_str_func
 {
   Lex_extended_collation_st m_set_collation;
+  bool check_arguments() const override
+  { return check_argument_types_can_return_str(0, 1); }
 public:
   Item_func_set_collation(THD *thd, Item *a,
                           const Lex_extended_collation_st &set_collation):
@@ -2177,6 +2226,9 @@ public:
      base_flags&= ~item_base_t::MAYBE_NULL;
      return FALSE;
   };
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
   table_map not_null_tables() const override { return 0; }
   Item* propagate_equal_fields(THD *thd, const Context &ctx, COND_EQUAL *cond)
     override

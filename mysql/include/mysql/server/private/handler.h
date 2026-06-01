@@ -33,6 +33,7 @@
 #include "mdl.h"
 #include "ha_handler_stats.h"
 #include "optimizer_costs.h"
+#include "handler_binlog_reader.h"
 
 #include "sql_analyze_stmt.h" // for Exec_time_tracker 
 
@@ -54,6 +55,12 @@ class Field_varstring;
 class Field_blob;
 class Column_definition;
 class select_result;
+class handler_binlog_reader;
+struct rpl_gtid;
+struct slave_connection_state;
+struct rpl_binlog_state_base;
+struct handler_binlog_event_group_info;
+struct handler_binlog_purge_info;
 
 // the following is for checking tables
 
@@ -861,7 +868,7 @@ typedef bool Log_func(THD*, TABLE*, Event_log *, binlog_cache_data *, bool,
 #define ALTER_PARTITION_ALL         (1ULL << 8)
 // Set for REMOVE PARTITIONING
 #define ALTER_PARTITION_REMOVE      (1ULL << 9)
-// Set for EXCHANGE PARITION
+// Set for EXCHANGE PARTITION
 #define ALTER_PARTITION_EXCHANGE    (1ULL << 10)
 // Set by Sql_cmd_alter_table_truncate_partition::execute()
 #define ALTER_PARTITION_TRUNCATE    (1ULL << 11)
@@ -923,7 +930,7 @@ struct xid_t {
   { return !xid->is_null() && eq(xid->gtrid_length, xid->bqual_length, xid->data); }
   bool eq(long g, long b, const char *d) const
   { return !is_null() && g == gtrid_length && b == bqual_length && !memcmp(d, data, g+b); }
-  void set(struct xid_t *xid)
+  void set(const struct xid_t *xid)
   { memcpy(this, xid, xid->length()); }
   void set(long f, const char *g, long gl, const char *b, long bl)
   {
@@ -971,7 +978,7 @@ struct xid_t {
     memcpy(&trx_server_id, data+MYSQL_XID_PREFIX_LEN, sizeof(trx_server_id));
     return trx_server_id;
   }
-  uint length()
+  uint length() const
   {
     return static_cast<uint>(sizeof(formatID)) + key_length();
   }
@@ -1026,7 +1033,7 @@ struct xid_recovery_member
   */
   Binlog_offset binlog_coord;
   XID *full_xid;           // needed by wsrep or past it recovery
-  decltype(::server_id) server_id;         // server id of orginal server
+  decltype(::server_id) server_id;         // server id of original server
 
   xid_recovery_member(my_xid xid_arg, uint prepare_arg, bool decided_arg,
                       XID *full_xid_arg, decltype(::server_id) server_id_arg)
@@ -1106,6 +1113,7 @@ enum enum_schema_tables
   SCH_TABLE_NAMES,
   SCH_TABLE_PRIVILEGES,
   SCH_TRIGGERS,
+  SCH_TRIGGERED_UPDATE_COLUMNS,
   SCH_USERS,
   SCH_USER_PRIVILEGES,
   SCH_VIEWS,
@@ -1243,6 +1251,17 @@ typedef struct st_ha_create_table_option {
   const char *values;
   struct st_mysql_sys_var *var;
 } ha_create_table_option;
+
+
+/* Struct used to return binlog file list for SHOW BINARY LOGS from engine. */
+struct binlog_file_entry
+{
+  binlog_file_entry *next;
+  LEX_CSTRING name;
+  /* The size is filled in by server, engine need not return it. */
+  my_off_t size;
+};
+
 
 class handler;
 class group_by_handler;
@@ -1439,7 +1458,7 @@ struct transaction_participant
     consistent between 2pc participants. Such engine is no longer required to
     durably flush to disk transactions in commit(), provided that the
     transaction has been successfully prepare()d and commit_ordered(); thus
-    potentionally saving one fsync() call. (Engine must still durably flush
+    potentially saving one fsync() call. (Engine must still durably flush
     to disk in commit() when no prepare()/commit_ordered() steps took place,
     at least if durable commits are wanted; this happens eg. if binlog is
     disabled).
@@ -1580,6 +1599,142 @@ struct handlerton : public transaction_participant
   */
   int (*create_partitioning_metadata)(const char *path, const char *old_path,
                                       chf_create_flags action_flag);
+
+  /* Optional implementation of binlog in the engine. */
+  bool (*binlog_init)(size_t binlog_size, const char *directory,
+                      HASH *recover_xid_hash);
+  /* Dynamically changing the binlog max size. */
+  void (*set_binlog_max_size)(size_t binlog_size);
+  /* Binlog an event group that doesn't go through commit_ordered. */
+  bool (*binlog_write_direct_ordered)(IO_CACHE *cache,
+                              handler_binlog_event_group_info *binlog_info,
+                              const rpl_gtid *gtid);
+  bool (*binlog_write_direct)(IO_CACHE *cache,
+                              handler_binlog_event_group_info *binlog_info,
+                              const rpl_gtid *gtid);
+  /*
+    Called for the last transaction (only) in a binlog group commit, with
+    no locks being held.
+  */
+  void (*binlog_group_commit_ordered)(THD *thd,
+                               handler_binlog_event_group_info *binlog_info);
+  /*
+    Binlog parts of large transactions out-of-band, in different chunks in the
+    binlog as the transaction executes. This limits the amount of data that
+    must be binlogged transactionally during COMMIT. The engine_data points to
+    a pointer location that the engine can set to maintain its own context
+    for the out-of-band data.
+
+    Optionally savepoints can be set at the point at the start of the write
+    (ie. before any written data), when stmt_start_data and/or savepoint_data
+    are non-NULL. Such a point can later be rolled back to by calling
+    binlog_savepoint_rollback(). (Only) if stmt_start_data or savepoint_data
+    is non-null can data_len be null (to set savepoint(s) and do nothing else).
+   */
+  bool (*binlog_oob_data_ordered)(THD *thd, const unsigned char *data,
+                                  size_t data_len, void **engine_data,
+                                  void **stmt_start_data,
+                                  void **savepoint_data);
+  bool (*binlog_oob_data)(THD *thd, const unsigned char *data,
+                          size_t data_len, void **engine_data);
+  /*
+    Rollback to a prior point in out-of-band binlogged partial transaction
+    data, for savepoint support. The stmt_start_data and/or savepoint_data,
+    if non-NULL, correspond to the point set by an earlier binlog_oob_data()
+    call.
+
+    Exactly one of stmt_start_data or savepoint_data will be non-NULL,
+    corresponding to either rolling back to the start of the current statement,
+    or to an earlier set savepoint.
+  */
+  void (*binlog_savepoint_rollback)(THD *thd, void **engine_data,
+                                    void **stmt_start_data,
+                                    void **savepoint_data);
+  /*
+    Call to reset (for new transactions) the engine_data from
+    binlog_oob_data(). Can also change the pointer to point to different data
+    (or set it to NULL).
+  */
+  void (*binlog_oob_reset)(void **engine_data);
+  /* Call to allow engine to release the engine_data from binlog_oob_data(). */
+  void (*binlog_oob_free)(void *engine_data);
+  /*
+    Durably persist the event data for the current user-XA transaction,
+    identified by XID.
+
+    This way, a later XA COMMIT can then be binlogged correctly with the
+    persisted event data, even across server restart.
+
+    The ENGINE_COUNT is the number of storage engines that participate in the
+    XA transaction. This is used to correctly handle crash recovery if the
+    server crashed in the middle of XA PREPARE. If during crash recovery,
+    we find the XID present in less than ENGINE_COUNT engines, then the
+    XA PREPARE did not complete before the crash, and should be rolled back
+    during crash recovery.
+  */
+  /* Binlog an event group that doesn't go through commit_ordered. */
+  bool (*binlog_write_xa_prepare_ordered)(THD *thd,
+           handler_binlog_event_group_info *binlog_info, uchar engine_count);
+  bool (*binlog_write_xa_prepare)(THD *thd,
+           handler_binlog_event_group_info *binlog_info, uchar engine_count);
+  /*
+    Binlog rollback a transaction that was previously made durably prepared
+    with binlog_write_xa_prepare.
+  */
+  bool (*binlog_xa_rollback_ordered)(THD *thd, const XID *xid,
+                                     void **engine_data);
+  bool (*binlog_xa_rollback)(THD *thd, const XID *xid, void **engine_data);
+  /*
+    The "unlog" method is used after a commit with an XID - either internal
+    2-phase commit with a separate storage engine, or explicit user
+    XA COMMIT. For user XA, it is also used after XA ROLLBACK.
+
+    The binlog first writes the commit durably, then the engines commit
+    durably, and finally "unlog" is done. The binlog engine must ensure it
+    can recover the committed XID until unlog has been called, after which
+    point resources can be freed, binlog files purged, etc.
+  */
+  void (*binlog_unlog)(const XID *xid, void **engine_data);
+  /*
+    Obtain an object to allow reading from the binlog.
+    The boolean argument wait_durable is set to true to require that
+    transactions be durable before they can be read and returned from the
+    reader. This is used to make replication crash-safe without requiring
+    durability; this way, if the master crashes, when it comes back up the
+    slave will not be ahead and replication will not diverge.
+  */
+  handler_binlog_reader * (*get_binlog_reader)(bool wait_durable);
+  /*
+    Obtain the current position in the binlog.
+    Used to support legacy SHOW MASTER STATUS.
+  */
+  void (*binlog_status)(uint64_t * out_fileno, uint64_t *out_pos);
+  /* Get a binlog name from a file_no. */
+  void (*get_filename)(char name[FN_REFLEN], uint64_t file_no);
+  /* Obtain list of binlog files (SHOW BINARY LOGS). */
+  binlog_file_entry * (*get_binlog_file_list)(MEM_ROOT *mem_root);
+  /*
+    End the current binlog file, and create and switch to a new one.
+    Used to implement FLUSH BINARY LOGS.
+  */
+  bool (*binlog_flush)();
+  /*
+    Read the binlog state at the start of the very first (not purged) binlog
+    file, and return it in *out_state. This is used to check validity of
+    FLUSH BINARY LOGS DELETE_DOMAIN_ID=(<list>).
+
+    Returns true on error, false on ok.
+  */
+  bool (*binlog_get_init_state)(rpl_binlog_state_base *out_state);
+  /* Engine implementation of RESET MASTER. */
+  bool (*reset_binlogs)();
+  /*
+    Engine implementation of PURGE BINARY LOGS.
+    Return 0 for ok or one of LOG_INFO_* errors.
+
+    See also ha_binlog_purge_info() for auto-purge.
+  */
+  int (*binlog_purge)(handler_binlog_purge_info *purge_info);
 
   /**********************************************************************
    Functions to intercept queries
@@ -1797,8 +1952,6 @@ handlerton *ha_default_tmp_handlerton(THD *thd);
 #define HTON_SUPPORTS_FOREIGN_KEYS   (1 << 0) //Foreign key constraint supported.
 
 #define HTON_CAN_MERGE               (1 <<11) //Merge type table
-// Engine needs to access the main connect string in partitions
-#define HTON_CAN_READ_CONNECT_STRING_IN_PARTITION (1 <<12)
 
 /* can be replicated by wsrep replication provider plugin */
 #define HTON_WSREP_REPLICATION (1 << 13)
@@ -2246,7 +2399,6 @@ struct Table_scope_and_contents_source_pod_st // For trivial members
   CHARSET_INFO *alter_table_convert_to_charset;
   LEX_CUSTRING tabledef_version;
   LEX_CUSTRING org_tabledef_version;            /* version of dropped table */
-  LEX_CSTRING connect_string;
   LEX_CSTRING comment;
   LEX_CSTRING alias;
   LEX_CSTRING org_storage_engine_name, new_storage_engine_name;
@@ -2345,8 +2497,7 @@ struct Table_scope_and_contents_source_st:
   bool fix_period_fields(THD *thd, Alter_info *alter_info);
   bool check_fields(THD *thd, Alter_info *alter_info,
                     const Lex_ident_table &table_name,
-                    const Lex_ident_db &db,
-                    int select_count= 0);
+                    const Lex_ident_db &db);
   bool check_period_fields(THD *thd, Alter_info *alter_info);
 
   void vers_check_native();
@@ -2355,8 +2506,7 @@ struct Table_scope_and_contents_source_st:
 
   bool vers_check_system_fields(THD *thd, Alter_info *alter_info,
                                 const Lex_ident_table &table_name,
-                                const Lex_ident_db &db,
-                                int select_count= 0);
+                                const Lex_ident_db &db);
 };
 
 
@@ -2370,12 +2520,14 @@ struct HA_CREATE_INFO: public Table_scope_and_contents_source_st,
 {
   /* TODO: remove after MDEV-20865 */
   Alter_info *alter_info;
+  bool repair;
 
   void init()
   {
     Table_scope_and_contents_source_st::init();
     Schema_specification_st::init();
     alter_info= NULL;
+    repair= 0;
   }
   ulong table_options_with_row_type()
   {
@@ -2579,20 +2731,11 @@ public:
   */
   KEY  *key_info_buffer;
 
-  /** Size of key_info_buffer array. */
-  uint key_count;
-
-  /** Size of index_drop_buffer array. */
-  uint index_drop_count= 0;
-
   /**
      Array of pointers to KEYs to be dropped belonging to the TABLE instance
      for the old version of the table.
   */
   KEY  **index_drop_buffer= nullptr;
-
-  /** Size of index_add_buffer array. */
-  uint index_add_count= 0;
 
   /**
      Array of indexes into key_info_buffer for KEYs to be added,
@@ -2601,32 +2744,6 @@ public:
   uint *index_add_buffer= nullptr;
 
   KEY_PAIR  *index_altered_ignorability_buffer= nullptr;
-
-  /** Size of index_altered_ignorability_buffer array. */
-  uint index_altered_ignorability_count= 0;
-
-  /**
-     Old and new index names. Used for index rename.
-  */
-  struct Rename_key_pair
-  {
-    Rename_key_pair(const KEY *old_key, const KEY *new_key)
-        : old_key(old_key), new_key(new_key)
-    {
-    }
-    const KEY *old_key;
-    const KEY *new_key;
-  };
-  /**
-     Vector of key pairs from DROP/ADD index which can be renamed.
-  */
-  typedef Mem_root_array<Rename_key_pair, true> Rename_keys_vector;
-
-  /**
-     A list of indexes which should be renamed.
-     Index definitions stays the same.
-  */
-  Rename_keys_vector rename_keys;
 
   /**
      Context information to allow handlers to keep context between in-place
@@ -2654,9 +2771,6 @@ public:
   */
   alter_table_operations handler_flags= 0;
 
-  /* Alter operations involving parititons are strored here */
-  ulong partition_flags;
-
   /**
      Partition_info taking into account the partition changes to be performed.
      Contains all partitions which are present in the old version of the table
@@ -2664,12 +2778,6 @@ public:
      to be added in the new version of table marked as such.
   */
   partition_info * const modified_part_info;
-
-  /** true for ALTER IGNORE TABLE ... */
-  const bool ignore;
-
-  /** true for online operation (LOCK=NONE) */
-  bool online= false;
 
   /**
     When ha_commit_inplace_alter_table() is called the engine can
@@ -2681,9 +2789,6 @@ public:
 
   /* This will be used as the argument to the above function when called */
   void *inplace_alter_table_committed_argument= nullptr;
-
-  /** which ALGORITHM and LOCK are supported by the storage engine */
-  enum_alter_inplace_result inplace_supported;
 
   /**
      Can be set by handler to describe why a given operation cannot be done
@@ -2699,11 +2804,57 @@ public:
   */
   const char *unsupported_reason= nullptr;
 
-  /** true when InnoDB should abort the alter when table is not empty */
-  const bool error_if_not_empty;
+  /* Alter operations involving parititons are strored here */
+  ulong partition_flags;
 
+  /**
+     Old and new index names. Used for index rename.
+  */
+  struct Rename_key_pair
+  {
+    Rename_key_pair(const KEY *old_key, const KEY *new_key)
+        : old_key(old_key), new_key(new_key)
+    {
+    }
+    const KEY *old_key;
+    const KEY *new_key;
+  };
+  /**
+     Vector of key pairs from DROP/ADD index which can be renamed.
+  */
+  typedef Mem_root_array<Rename_key_pair, true> Rename_keys_vector;
+
+  /**
+     A list of indexes which should be renamed.
+     Index definitions stays the same.
+  */
+  Rename_keys_vector rename_keys;
+
+  /** Size of key_info_buffer array. */
+  uint key_count;
+
+  /** Size of index_drop_buffer array. */
+  uint index_drop_count= 0;
+
+  /** Size of index_add_buffer array. */
+  uint index_add_count= 0;
+
+  /** Size of index_altered_ignorability_buffer array. */
+  uint index_altered_ignorability_count= 0;
+
+  /** which ALGORITHM and LOCK are supported by the storage engine */
+  enum_alter_inplace_result inplace_supported;
+
+  /** TRUE for online operation (LOCK=NONE) */
+  unsigned online : 1;
+  /** TRUE when innodb_file_per_table is set */
+  unsigned file_per_table : 1;
+  /** TRUE for ALTER IGNORE TABLE ... */
+  unsigned ignore : 1;
+  /** true when InnoDB should abort the alter when table is not empty */
+  unsigned error_if_not_empty : 1;
   /** True when DDL should avoid downgrading the MDL */
-  bool mdl_exclusive_after_prepare= false;
+  unsigned mdl_exclusive_after_prepare : 1;
 
   Alter_inplace_info(HA_CREATE_INFO *create_info_arg,
                      Alter_info *alter_info_arg,
@@ -3254,6 +3405,17 @@ class handler :public Sql_alloc
 {
 public:
   typedef ulonglong Table_flags;
+
+  /*
+    The direction of the current range or index scan. This is used by
+    the ICP implementation to determine if it has reached the end
+    of the current range.
+  */
+  enum enum_range_scan_direction {
+    RANGE_SCAN_ASC,
+    RANGE_SCAN_DESC
+  };
+
 protected:
   TABLE_SHARE *table_share;   /* The table definition */
   TABLE *table;               /* The current open table */
@@ -3269,8 +3431,10 @@ protected:
   */
   ha_handler_stats active_handler_stats;
   void set_handler_stats();
+
 public:
   handlerton *ht;               /* storage engine of this handler */
+  ha_table_option_struct *option_struct;         /* table options */
   OPTIMIZER_COSTS *costs;       /* Points to table->share->costs */
   uchar *ref;			/* Pointer to current row */
   uchar *dup_ref;		/* Pointer to duplicate row */
@@ -3295,7 +3459,11 @@ public:
 
   KEY_MULTI_RANGE mrr_cur_range;
 
-  /** The following are for read_range() */
+private:
+  /* Used by Index Condition Pushdown, handler_index_cond_check()/compare_key2() */
+  enum_range_scan_direction range_scan_direction{RANGE_SCAN_ASC};
+public:
+  /** The following are for read_range_first/next() and ICP */
   key_range save_end_range, *end_range;
   KEY_PART_INFO *range_key_part;
   int key_compare_result_on_equal;
@@ -3473,13 +3641,13 @@ private:
   Handler_share **ha_share;
 public:
 
-  double optimizer_where_cost;          // Copy of THD->...optimzer_where_cost
-  double optimizer_scan_setup_cost;     // Copy of THD->...optimzer_scan_...
+  double optimizer_where_cost;          // Copy of THD->...optimizer_where_cost
+  double optimizer_scan_setup_cost;     // Copy of THD->...optimizer_scan_...
 
   handler(handlerton *ht_arg, TABLE_SHARE *share_arg)
     :table_share(share_arg), table(0),
     estimation_rows_to_insert(0),
-    ht(ht_arg), costs(0), ref(0), lookup_handler(this),
+    ht(ht_arg), option_struct(0), costs(0), ref(0), lookup_handler(this),
     lookup_buffer(NULL), handler_stats(NULL),
     end_range(NULL), implicit_emptied(0),
     mark_trx_read_write_done(0),
@@ -3523,7 +3691,7 @@ public:
     DBUG_ASSERT(m_lock_type == F_UNLCK);
     DBUG_ASSERT(inited == NONE);
   }
-  /* To check if table has been properely opened */
+  /* To check if table has been properly opened */
   bool is_open()
   {
     return ref != 0;
@@ -3545,7 +3713,8 @@ public:
     DBUG_ASSERT(inited==INDEX);
     inited=       NONE;
     active_index= MAX_KEY;
-    end_range=    NULL;
+    end_range= NULL;
+    range_scan_direction= RANGE_SCAN_ASC;
     DBUG_RETURN(index_end());
   }
   /* This is called after index_init() if we need to do a index scan */
@@ -3615,7 +3784,7 @@ public:
   }
   inline int ha_end_keyread()
   {
-    if (!keyread_enabled())                    /* Enably lazy usage */
+    if (!keyread_enabled())                    /* Enable lazy usage */
       return 0;
     keyread= MAX_KEY;
     return extra(HA_EXTRA_NO_KEYREAD);
@@ -3853,7 +4022,7 @@ public:
 
   /*
     Set handler optimizer cost variables.
-    Called for each table used by the statment
+    Called for each table used by the statement
     This is virtual mainly for the partition engine.
   */
   virtual void set_optimizer_costs(THD *thd);
@@ -4093,8 +4262,11 @@ public:
     call. Normally the handler should ignore all calls until we have done
     a ha_rnd_init() or ha_index_init(), write_row(), update_row or delete_row()
     as there may be several calls to this routine.
+
+    @param mark_for_update  whether to mark indexed virtual columns
+                            for UPDATE operations
   */
-  virtual void column_bitmaps_signal();
+  virtual void column_bitmaps_signal(bool mark_for_update);
   /*
     We have to check for inited as some engines, like innodb, sets
     active_index during table scan.
@@ -4321,7 +4493,7 @@ public:
     This is intended to be used for EXPLAIN, via the following scenario:
     1. SQL layer calls handler->multi_range_read_info().
     1.1. Storage engine figures out whether it will use some non-default
-         MRR strategy, sets appropritate bits in *mrr_mode, and returns 
+         MRR strategy, sets appropriate bits in *mrr_mode, and returns
          control to SQL layer
     2. SQL layer remembers the returned mrr_mode
     3. SQL layer compares various options and choses the final query plan. As
@@ -4345,7 +4517,8 @@ public:
                                const key_range *end_key,
                                bool eq_range, bool sorted);
   virtual int read_range_next();
-  void set_end_range(const key_range *end_key);
+  virtual void set_end_range(const key_range *end_key,
+                             enum_range_scan_direction direction = RANGE_SCAN_ASC);
   int compare_key(key_range *range);
   int compare_key2(key_range *range) const;
   virtual int ft_init() { return HA_ERR_WRONG_COMMAND; }
@@ -4421,7 +4594,7 @@ public:
   { return extra(operation); }
   /*
     Table version id for the table. This should change for each
-    sucessfull ALTER TABLE.
+    successful ALTER TABLE.
     This is used by the handlerton->check_version() to ask the engine
     if the table definition has been updated.
     Storage engines that does not support inplace alter table does not
@@ -4660,7 +4833,7 @@ public:
     Count tables invisible from all tables list on which current one built
     (like myisammrg and partitioned tables)
 
-    tables_type          mask for the tables should be added herdde
+    tables_type          mask for the tables should be added here
 
     returns number of such tables
   */
@@ -5482,6 +5655,7 @@ public:
   virtual handlerton *partition_ht() const
   { return ht; }
   virtual bool partition_engine() { return 0;}
+  virtual uint partition_index_scan_method() { return 0; }
   /*
     Used with 'wrapper' engines, like SEQUENCE, to access to the
     underlaying engine used for storage.
@@ -5501,8 +5675,8 @@ public:
 
     @param record        record to find (also will be fillded with
                          actual record fields)
-    @param unique_ref    index or unique constraiun number (depends
-                         on what used in the engine
+    @param unique_ref    index or unique constraint number (depends
+                         on how it is implemented by the engine)
 
     @retval -1 Error
     @retval  1 Not found
@@ -5582,6 +5756,7 @@ bool key_uses_partial_cols(TABLE_SHARE *table, uint keyno);
 extern const LEX_CSTRING ha_row_type[];
 extern MYSQL_PLUGIN_IMPORT const char *tx_isolation_names[];
 extern MYSQL_PLUGIN_IMPORT const char *binlog_format_names[];
+extern MYSQL_PLUGIN_IMPORT const char *binlog_formats_create_tmp_names[];
 extern TYPELIB tx_isolation_typelib;
 extern const char *myisam_stats_method_names[];
 extern ulong total_ha, total_ha_2pc;
@@ -5712,6 +5887,7 @@ int ha_commit_one_phase(THD *thd, bool all);
 int ha_commit_trans(THD *thd, bool all);
 int ha_rollback_trans(THD *thd, bool all);
 int ha_prepare(THD *thd);
+int ha_recover_engine_binlog(HASH *xid_hash);
 int ha_recover(HASH *commit_list, MEM_ROOT *mem_root= NULL);
 uint ha_recover_complete(HASH *commit_list, Binlog_offset *coord= NULL);
 
@@ -5844,10 +6020,137 @@ inline void Cost_estimate::reset(handler *file)
   avg_io_cost= file->DISK_READ_COST * file->DISK_READ_RATIO;
 }
 
-int get_select_field_pos(Alter_info *alter_info, int select_field_count,
-                         bool versioned);
+int get_select_field_pos(Alter_info *alter_info, bool versioned);
 
 #ifndef DBUG_OFF
 String dbug_format_row(TABLE *table, const uchar *rec, bool print_names= true);
 #endif /* DBUG_OFF */
+
+/* Struct with info about an event group to be binlogged by a storage engine. */
+struct handler_binlog_event_group_info {
+  /*
+    These are returned by (set by) the binlog_write_direct_ordered hton
+    method to approximate/best-effort position of the start of where the
+    event group was written.
+  */
+  uint64_t out_file_no;
+  uint64_t out_offset;
+  /* Opaque pointer for the engine's use. */
+  void *engine_ptr;
+  /*
+    Secondary engine context ptr.
+    This will be non-null only when both non-transactional (aka statement cache)
+    and transactional (aka transaction cache) updates are binlogged together.
+    Then this secondary pointer is the non-transactional / statement cache
+    part, and it should be considered to go before the transactional /
+    transaction cache part in the commit record.
+  */
+  void *engine_ptr2;
+  /*
+    The XID for XA PREPARE/XA COMMIT; else NULL.
+    When this is set, the IO_CACHE only contains the GTID. All other event data
+    was spilled as OOB and persisted with the binlog_write_xa_prepare hton
+    call; the engine binlog implementation must use the XID to look up or
+    otherwise refer to that OOB data.
+  */
+  const XID *xa_xid;
+  /* End of data that has already been binlogged out-of-band. */
+  my_off_t out_of_band_offset;
+  /*
+    Offset of the GTID event, which comes first in the event group, but is put
+    at the end of the IO_CACHE containing the data to be binlogged.
+  */
+  my_off_t gtid_offset;
+  /*
+    If xa_xid is non-NULL, this is set for an internal 2-phase commit between
+    the engine binlog and one or more additional storage engines participating
+    in the transaction. In this case, there is no call to the
+    binlog_write_xa_prepare() method. The binlog engine must record durably
+    that the xa_xid was committed, and in case of recovery it must pass the
+    xa_xid to the server layer for it to commit in all participating engines.
+
+    If not set, any XID is user external XA, and the xa_xid was previously
+    passed to binlog_write_xa_prepare(). The binlog engine must again record
+    durably that the xa_xid was committed and recover it in case of crash.
+
+    The ability to recover the xa_xid must remain until the binlog_xa_unlog()
+    method is called.
+  */
+  bool internal_xa;
+};
+
+
+/* Structure returned by ha_binlog_purge_info(). */
+struct handler_binlog_purge_info {
+  /* The earliest binlog file that is in use by a dump thread. */
+  uint64_t limit_file_no;
+  /*
+    Set by engine to give a reason why a requested purge could not be done.
+    If set, then nonpurge_filename should be set to the filename.
+
+    Also set by ha_binlog_purge_info() when it returns false, to the reason
+    why no purge is possible. In this case, the nonpurge_filename is set
+    to the empty string.
+  */
+  const char *nonpurge_reason;
+  /* The user-configured maximum total size of the binlog. */
+  ulonglong limit_size;
+  /* Binlog name, for PURGE BINARY LOGS TO. */
+  const char *limit_name;
+  /* The earliest file date (unix timestamp) that should not be purged. */
+  time_t limit_date;
+  /* Whether purge by date and/or by size and/or name is requested. */
+  bool purge_by_date, purge_by_size, purge_by_name;
+  /*
+    The name of the file that could not be purged, when nonpurge_reason
+    is given.
+  */
+  char nonpurge_filename[FN_REFLEN];
+  /* Default constructor to silence compiler warnings -Wuninitialized. */
+  handler_binlog_purge_info()= default;
+};
+
+
+/*
+  Structure holding information about each XID present in binlog engine at
+  server startup.
+
+  Objects of this class (or a class derived from it by the engine binlog
+  implementation) will be inserted into a HASH passed to the binlog_init
+  hton call. The server layer will free these objects using normal delete.
+*/
+class handler_binlog_xid_info {
+public:
+  enum binlog_xid_state {
+    BINLOG_PREPARE, BINLOG_COMMIT, BINLOG_ROLLBACK
+  };
+  XID xid;
+  /*
+    Number of storage engines in which this transaction is prepared. Used when
+    xid_state==BINLOG_PREPARE.
+
+    This is used to correctly recover from a crash in the middle of an XA
+    PREPARE. If the crash happens before all engines had time to durably
+    prepare, then the XID will be rolled back. If all engines got prepared,
+    then the XID will be preserved in "prepared" state.
+  */
+  uint32_t engine_count;
+  /* Bitmap of which engine(s) a prepared transaction was found in. */
+  uint32_t engine_map;
+  enum binlog_xid_state xid_state;
+
+  /* The key function to use for the HASH. */
+  static const uchar *get_key(const void *p, size_t *out_len, my_bool)
+  {
+    const XID *xid=
+      &(reinterpret_cast<const handler_binlog_xid_info *>(p)->xid);
+    *out_len= xid->key_length();
+    return xid->key();
+  }
+  handler_binlog_xid_info(binlog_xid_state typ) :
+    engine_count(0), engine_map(0), xid_state(typ) { }
+  virtual ~handler_binlog_xid_info() { };
+};
+
+
 #endif /* HANDLER_INCLUDED */

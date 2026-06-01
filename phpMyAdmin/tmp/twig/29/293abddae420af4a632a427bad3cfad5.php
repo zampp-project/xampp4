@@ -92,6 +92,6 @@ yield _gettext("Close");
 
     public function getSourceContext()
     {
-        return new Source("", "modals/create_view.twig", "D:\\xampp4\\phpMyAdmin\\templates\\modals\\create_view.twig");
+        return new Source("", "modals/create_view.twig", "D:\\test-public2\\phpMyAdmin\\templates\\modals\\create_view.twig");
     }
 }

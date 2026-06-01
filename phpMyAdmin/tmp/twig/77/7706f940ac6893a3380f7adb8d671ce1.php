@@ -88,6 +88,6 @@ yield _gettext("Close");
 
     public function getSourceContext()
     {
-        return new Source("", "modals/preview_sql_modal.twig", "D:\\xampp4\\phpMyAdmin\\templates\\modals\\preview_sql_modal.twig");
+        return new Source("", "modals/preview_sql_modal.twig", "D:\\test-public2\\phpMyAdmin\\templates\\modals\\preview_sql_modal.twig");
     }
 }

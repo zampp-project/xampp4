@@ -72,6 +72,8 @@ public:
 public:
   virtual ~Type_handler_geometry() {}
   enum_field_types field_type() const override { return MYSQL_TYPE_GEOMETRY; }
+  uint get_column_attributes() const override
+  { return ATTR_LENGTH | ATTR_DEC | ATTR_SRID; }
   bool Item_append_extended_type_info(Send_field_extended_metadata *to,
                                       const Item *item) const override
   {
@@ -178,7 +180,7 @@ public:
                                    const Bit_addr &bit,
                                    const Column_definition_attributes *attr,
                                    uint32 flags) const override;
-
+  bool can_return_bool() const override { return true; }
   bool can_return_int() const override { return false; }
   bool can_return_decimal() const override { return false; }
   bool can_return_real() const override { return false; }
@@ -216,6 +218,16 @@ public:
     override;
   bool Item_datetime_typecast_fix_length_and_dec(Item_datetime_typecast *) const
     override;
+  bool is_supertype(const Type_std_attributes &dst_std_attr,
+                    const Type_extra_attributes &dst_extra_attr,
+                    const Type_handler *src_th,
+                    const Type_std_attributes &src_std_attr,
+                    const Type_extra_attributes &src_extra_attr) const override
+  {
+    return this == src_th ||
+      (geometry_type() == GEOM_GEOMETRY &&
+       dynamic_cast<const Type_handler_geometry*>(src_th));
+  }
 };
 
 

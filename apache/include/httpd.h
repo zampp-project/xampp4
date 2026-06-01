@@ -249,6 +249,10 @@ extern "C" {
 #define DOCTYPE_HTML_4_0F "<!DOCTYPE HTML PUBLIC \"-//W3C//" \
                           "DTD HTML 4.0 Frameset//EN\"\n" \
                           "\"http://www.w3.org/TR/REC-html40/frameset.dtd\">\n"
+/** HTML 4.01 Doctype */
+#define DOCTYPE_HTML_4_01 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n"
+/** HTML 5 Doctype */
+#define DOCTYPE_HTML_5 "<!DOCTYPE html>\n"
 /** XHTML 1.0 Strict Doctype */
 #define DOCTYPE_XHTML_1_0S "<!DOCTYPE html PUBLIC \"-//W3C//" \
                            "DTD XHTML 1.0 Strict//EN\"\n" \
@@ -453,13 +457,13 @@ AP_DECLARE(const char *) ap_get_server_built(void);
 
 /* non-HTTP status codes returned by hooks */
 
-#define OK 0                    /**< Module has handled this stage. */
-#define DECLINED -1             /**< Module declines to handle */
-#define DONE -2                 /**< Module has served the response completely
-                                 *  - it's safe to die() with no more output
-                                 */
-#define SUSPENDED -3 /**< Module will handle the remainder of the request.
-                      * The core will never invoke the request again, */
+#define OK           0  /**< Module has handled this stage. */
+#define DECLINED    -1  /**< Module declines to handle */
+#define DONE        -2  /**< Module has served the response completely
+                         *   - it's safe to die() with no more output
+                         */
+#define SUSPENDED   -3  /**< Module will handle the remainder of the request.
+                         *   The core will never invoke the request again */
 
 /** Returned by the bottom-most filter if no data was written.
  *  @see ap_pass_brigade(). */
@@ -667,6 +671,7 @@ typedef apr_uint64_t ap_request_bnotes_t;
  *
  */
 #define AP_REQUEST_STRONG_ETAG 1 >> 0
+#define AP_REQUEST_TRUSTED_CT  1 << 1
 
 /**
  * This is a convenience macro to ease with getting specific request
@@ -689,6 +694,12 @@ typedef apr_uint64_t ap_request_bnotes_t;
         AP_REQUEST_GET_BNOTE((r), AP_REQUEST_STRONG_ETAG)
 /** @} */
 
+/**
+ * Returns true if the content-type field is from a trusted source
+ */
+#define AP_REQUEST_IS_TRUSTED_CT(r) \
+    (!!AP_REQUEST_GET_BNOTE((r), AP_REQUEST_TRUSTED_CT))
+/** @} */
 
 /**
  * @defgroup module_magic Module Magic mime types
@@ -1107,7 +1118,7 @@ struct request_rec {
      */
     int double_reverse;
     /** Request flags associated with this request. Use
-     * AP_REQUEST_GET_FLAGS() and AP_REQUEST_SET_FLAGS() to access
+     * AP_REQUEST_GET_BNOTE() and AP_REQUEST_SET_BNOTE() to access
      * the elements of this field.
      */
     ap_request_bnotes_t bnotes;
@@ -1249,16 +1260,25 @@ struct conn_rec {
  * only be set by the MPM. Use CONN_STATE_LINGER outside of the MPM.
  */
 typedef enum  {
-    CONN_STATE_CHECK_REQUEST_LINE_READABLE,
-    CONN_STATE_READ_REQUEST_LINE,
-    CONN_STATE_HANDLER,
-    CONN_STATE_WRITE_COMPLETION,
-    CONN_STATE_SUSPENDED,
-    CONN_STATE_LINGER,          /* connection may be closed with lingering */
-    CONN_STATE_LINGER_NORMAL,   /* MPM has started lingering close with normal timeout */
-    CONN_STATE_LINGER_SHORT,    /* MPM has started lingering close with short timeout */
+    CONN_STATE_KEEPALIVE,           /* Kept alive in the MPM (using KeepAliveTimeout) */
+    CONN_STATE_PROCESSING,          /* Processed by process_connection hooks */
+    CONN_STATE_HANDLER,             /* Processed by the modules handlers */
+    CONN_STATE_WRITE_COMPLETION,    /* Flushed by the MPM before entering CONN_STATE_KEEPALIVE */
+    CONN_STATE_SUSPENDED,           /* Suspended in the MPM until ap_run_resume_suspended() */
+    CONN_STATE_LINGER,              /* MPM flushes then closes the connection with lingering */
+    CONN_STATE_LINGER_NORMAL,       /* MPM has started lingering close with normal timeout */
+    CONN_STATE_LINGER_SHORT,        /* MPM has started lingering close with short timeout */
 
-    CONN_STATE_NUM              /* Number of states (keep/kept last) */
+    CONN_STATE_ASYNC_WAITIO,        /* Returning this state to the MPM will make it wait for
+                                     * the connection to be readable or writable according to
+                                     * c->cs->sense (resp. CONN_SENSE_WANT_READ or _WRITE),
+                                     * using the configured Timeout */
+
+    CONN_STATE_NUM,                 /* Number of states (keep here before aliases) */
+
+    /* Aliases (legacy) */
+    CONN_STATE_CHECK_REQUEST_LINE_READABLE  = CONN_STATE_KEEPALIVE,
+    CONN_STATE_READ_REQUEST_LINE            = CONN_STATE_PROCESSING,
 } conn_state_e;
 
 typedef enum  {
@@ -2110,6 +2130,54 @@ AP_DECLARE(int) ap_ind(const char *str, char c);        /* Sigh... */
 AP_DECLARE(int) ap_rind(const char *str, char c);
 
 /**
+ * Check whether two buffers of equal size have the same content, using a
+ * constant time algorithm (branch-less with regard to the content of the
+ * buffers and an execution time solely dependent on the number of bytes
+ * compared, not the bytes themselves).
+ *
+ * @param buf1 first buffer to compare
+ * @param buf2 second buffer to compare
+ * @param n number of bytes to compare
+ * @return 1 if equal, 0 otherwise
+ */
+AP_DECLARE(int) ap_memeq_timingsafe(const void *buf1, const void *buf2,
+                                    apr_size_t n);
+
+/**
+ * Check whether two NUL-terminated strings have the same content, using a
+ * constant time algorithm (branch-less with regard to the content of the
+ * secret string and an execution time solely dependent on the length of
+ * the non-secret string). The secret string of the two should be set in
+ * the first parameter \c sec1 to avoid leaking its length.
+ *
+ * @param sec1 first string to compare (the secret one)
+ * @param str2 second string to compare
+ * @return 1 if equal, 0 otherwise
+ * @remark The function will compare as much characters as there are in
+ *         \c str2, so the length of \c str2 might leak through side channel,
+ *         while the length of \c sec1 does not.
+ */
+AP_DECLARE(int) ap_streq_timingsafe(const char *sec1, const char *str2);
+
+/**
+ * Check whether two NUL-terminated strings have the same content, up to \c n
+ * characters, using a constant time algorithm (branch-less with regard to the
+ * content of the secret string and an execution time solely dependent on the
+ * length of the non-secret string or \c n). The secret string of the two
+ * should be set in the first parameter \c sec1 to avoid leaking its length.
+ *
+ * @param sec1 secret string to compare
+ * @param str2 string to compare with
+ * @param n max number of characters to compare
+ * @return 1 if equal, 0 otherwise
+ * @remark The function will compare as much characters as there are in
+ *         \c str2 if it's less than \c n, so the length of \c str2 might
+ *         leak through side channel, while the length of \c sec1 does not.
+ */
+AP_DECLARE(int) ap_strneq_timingsafe(const char *sec1, const char *str2,
+                                     apr_size_t n);
+
+/**
  * Given a string, replace any bare &quot; with \\&quot; .
  * @param p The pool to allocate memory from
  * @param instring The string to search for &quot;
@@ -2655,6 +2723,51 @@ AP_DECLARE(const char *)ap_dir_fnmatch(ap_dir_match_t *w, const char *path,
  * @return 1 if the last Transfer-Encoding is "chunked", else 0
  */
 AP_DECLARE(int) ap_is_chunked(apr_pool_t *p, const char *line);
+
+
+/**
+ * apr_filepath_merge with an allow-list
+ * Merge additional file path onto the previously processed rootpath
+ * @param newpath the merged paths returned
+ * @param rootpath the root file path (NULL uses the current working path)
+ * @param addpath the path to add to the root path
+ * @param flags the desired APR_FILEPATH_ rules to apply when merging
+ * @param p the pool to allocate the new path string from
+ * @remark if the flag APR_FILEPATH_TRUENAME is given, and the addpath
+ * contains wildcard characters ('*', '?') on platforms that don't support
+ * such characters within filenames, the paths will be merged, but the
+ * result code will be APR_EPATHWILD, and all further segments will not
+ * reflect the true filenames including the wildcard and following segments.
+ */
+AP_DECLARE(apr_status_t) ap_filepath_merge(char **newpath,
+                                             const char *rootpath,
+                                             const char *addpath,
+                                             apr_int32_t flags,
+                                             apr_pool_t *p);
+
+#ifdef WIN32
+#define apr_filepath_merge  ap_filepath_merge
+#endif
+
+/* Win32/NetWare/OS2 need to check for both forward and back slashes
+ * in ap_normalize_path() and ap_escape_url().
+ */
+#ifdef CASE_BLIND_FILESYSTEM
+#define AP_IS_SLASH(s) ((s == '/') || (s == '\\'))
+#define AP_SLASHES "/\\"
+#else
+#define AP_IS_SLASH(s) (s == '/')
+#define AP_SLASHES "/"
+#endif
+
+/**
+ * Validates the path parameter is safe to pass to stat-like calls.
+ * @param path The filesystem path to cehck
+ * @param p a pool for temporary allocations
+ * @return APR_SUCCESS if the stat-like call should be allowed
+ */
+AP_DECLARE(apr_status_t) ap_stat_check(const char *path, apr_pool_t *pool);
+
 
 #ifdef __cplusplus
 }

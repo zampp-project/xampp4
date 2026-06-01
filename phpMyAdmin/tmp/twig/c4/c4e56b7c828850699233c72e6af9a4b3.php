@@ -289,6 +289,6 @@ yield _gettext("SQL upload");
 
     public function getSourceContext()
     {
-        return new Source("", "navigation/main.twig", "D:\\xampp4\\phpMyAdmin\\templates\\navigation\\main.twig");
+        return new Source("", "navigation/main.twig", "D:\\test-public2\\phpMyAdmin\\templates\\navigation\\main.twig");
     }
 }

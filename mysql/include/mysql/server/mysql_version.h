@@ -11,13 +11,15 @@
 #include <custom_conf.h>
 #else
 #define PROTOCOL_VERSION		10
-#define MYSQL_SERVER_VERSION		"11.8.6-MariaDB"
-#define MYSQL_BASE_VERSION		"mysqld-11.8"
-#define MARIADB_BASE_VERSION		"mariadb-11.8"
-#define MARIADBD_BASE_VERSION		"mariadbd-11.8"
+#define MYSQL_SERVER_VERSION		"12.3.2-MariaDB"
+#define MYSQL_BASE_VERSION		"mysqld-12.3"
+#define MARIADB_BASE_VERSION		"mariadb-12.3"
+#define MARIADB_MAJOR_VERSION		"mariadb-12"
+#define MARIADBD_BASE_VERSION		"mariadbd-12.3"
+#define MARIADBD_MAJOR_VERSION		"mariadbd-12"
 #define MYSQL_SERVER_SUFFIX_DEF		""
 #define FRM_VER				6
-#define MYSQL_VERSION_ID		110806
+#define MYSQL_VERSION_ID		120302
 #define MARIADB_PORT                    3306
 #define MYSQL_PORT_DEFAULT		0
 #define MARIADB_UNIX_ADDR               "/tmp/mysql.sock"

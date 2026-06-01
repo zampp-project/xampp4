@@ -227,13 +227,14 @@ enum ha_extra_function {
     that we are starting an ordered index scan. Needed by Spider
   */
   HA_EXTRA_STARTING_ORDERED_INDEX_SCAN,
-  /** Start writing rows during ALTER TABLE...ALGORITHM=COPY. */
-  HA_EXTRA_BEGIN_ALTER_COPY,
-  /** Finish writing rows during ALTER TABLE...ALGORITHM=COPY. */
-  HA_EXTRA_END_ALTER_COPY,
-  /** Abort of writing rows during ALTER TABLE..ALGORITHM=COPY or
-  CREATE..SELCT */
-  HA_EXTRA_ABORT_ALTER_COPY
+  /** Start copying in ALTER TABLE...ALGORITHM=COPY or CREATE TABLE..SELECT */
+  HA_EXTRA_BEGIN_COPY,
+  /** Start writing rows during ALTER IGNORE TABLE..ALGORITHM=COPY */
+  HA_EXTRA_BEGIN_ALTER_IGNORE_COPY,
+  /** Finish HA_EXTRA_BEGIN_COPY or HA_EXTRA_BEGIN_ALTER_IGNORE_COPY */
+  HA_EXTRA_END_COPY,
+  /** Abort HA_EXTRA_BEGIN_COPY or HA_EXTRA_BEGIN_ALTER_IGNORE_COPY */
+  HA_EXTRA_ABORT_COPY
 };
 
 /* Compatible option, to be deleted in 6.0 */
@@ -473,7 +474,7 @@ enum ha_base_keytype {
 #define HA_ERR_RETRY_INIT 129 /* Initialization failed and should be retried */
 #define HA_ERR_NOT_A_TABLE      130     /* not a MYI file - no signature */
 #define HA_ERR_WRONG_COMMAND	131	/* Command not supported */
-#define HA_ERR_OLD_FILE		132	/* old databasfile */
+#define HA_ERR_OLD_FILE		132	/* old database file */
 #define HA_ERR_NO_ACTIVE_RECORD 133	/* No record read in update() */
 #define HA_ERR_RECORD_DELETED	134	/* A record is not there */
 #define HA_ERR_RECORD_FILE_FULL 135	/* No more room in file */

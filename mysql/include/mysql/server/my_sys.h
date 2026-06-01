@@ -89,6 +89,7 @@ C_MODE_START
 #define MY_FREE_ON_ERROR 128U	/* my_realloc() ; Free old ptr on error */
 #define MY_DONT_OVERWRITE_FILE 2048U /* my_copy: Don't overwrite file */
 #define MY_THREADSAFE 2048U     /* my_seek(): lock fd mutex */
+#define MY_BUFFER_NO_RESIZE 512U
 #define MY_SYNC       4096U     /* my_copy(): sync dst file */
 #define MY_SYNC_DIR   32768U    /* my_create/delete/rename: sync directory */
 #define MY_THREAD_SPECIFIC 0x10000U /* my_malloc(): thread specific */
@@ -365,6 +366,17 @@ typedef struct st_dynamic_array
   myf malloc_flags;
 } DYNAMIC_ARRAY;
 
+typedef struct st_mem_root_dynamic_array
+{
+  MEM_ROOT *mem_root;
+  uchar *buffer;
+  size_t elements, max_element;
+  size_t alloc_increment;
+  size_t size_of_element;
+  PSI_memory_key m_psi_key;
+  myf malloc_flags;
+} MEM_ROOT_DYNAMIC_ARRAY;
+
 
 typedef struct st_dynamic_array_append
 {
@@ -473,7 +485,7 @@ typedef struct st_io_cache		/* Used when caching files */
   int (*write_function)(struct st_io_cache *,const uchar *,size_t);
   /*
     Specifies the type of the cache. Depending on the type of the cache
-    certain operations might not be available and yield unpredicatable
+    certain operations might not be available and yield unpredictable
     results. Details to be documented later
   */
   enum cache_type type;
@@ -792,11 +804,13 @@ extern char * my_path(char * to,const char *progname,
 			 const char *own_pathname_part);
 extern char * my_load_path(char * to, const char *path,
 			      const char *own_path_prefix);
+extern char *find_file_in_path(char *to,const char *name);
 extern int wild_compare(const char *str,const char *wildstr,
                         pbool str_is_pattern);
 extern my_bool array_append_string_unique(const char *str,
                                           const char **array, size_t size);
-extern void get_date(char * to,int timeflag,time_t use_time);
+extern void get_date(char * to, size_t to_len, int timeflag,
+                     time_t use_time);
 extern void soundex(CHARSET_INFO *, char * out_pntr, char * in_pntr,
                     pbool remove_garbage);
 extern int init_record_cache(RECORD_CACHE *info,size_t cachesize,File file,
@@ -895,7 +909,7 @@ extern my_bool init_dynamic_string(DYNAMIC_STRING *str, const char *init_str,
 				   size_t init_alloc,size_t alloc_increment);
 extern my_bool dynstr_append(DYNAMIC_STRING *str, const char *append);
 my_bool dynstr_append_mem(DYNAMIC_STRING *str, const char *append,
-			  size_t length);
+			  size_t length) __attribute__((nonnull(2)));
 extern my_bool dynstr_append_os_quoted(DYNAMIC_STRING *str, const char *append,
                                        ...);
 extern my_bool dynstr_append_quoted(DYNAMIC_STRING *str,
@@ -1178,6 +1192,74 @@ extern size_t escape_quotes_for_mysql(CHARSET_INFO *charset_info,
 extern void thd_increment_bytes_sent(void *thd, size_t length);
 extern void thd_increment_bytes_received(void *thd, size_t length);
 extern void thd_increment_net_big_packet_count(void *thd, size_t length);
+
+extern int mem_root_dynamic_array_init(MEM_ROOT *mem_root,
+                                       PSI_memory_key psi_key,
+                                       MEM_ROOT_DYNAMIC_ARRAY *array,
+                                       size_t element_size, void *init_buffer,
+                                       size_t init_alloc,
+                                       size_t alloc_increment,
+                                       myf my_flags);
+int mem_root_allocate_dynamic(MEM_ROOT *mem_root,
+                              MEM_ROOT_DYNAMIC_ARRAY *array,
+                              size_t idx);
+extern void* mem_root_dynamic_array_get_val(MEM_ROOT_DYNAMIC_ARRAY *array, size_t idx);
+extern void mem_root_dynamic_array_reset(MEM_ROOT_DYNAMIC_ARRAY *array);
+extern int mem_root_dynamic_array_resize_not_allowed(MEM_ROOT_DYNAMIC_ARRAY *array);
+extern void mem_root_dynamic_array_copy_values(MEM_ROOT_DYNAMIC_ARRAY *dest, MEM_ROOT_DYNAMIC_ARRAY *src);
+static inline int mem_root_dynamic_array_set_val(MEM_ROOT_DYNAMIC_ARRAY *array,
+                                   const void *element, size_t idx)
+{
+  DBUG_ASSERT(idx < array->max_element);
+
+  memcpy(array->buffer+(idx * array->size_of_element), element,
+         array->size_of_element);
+  return TRUE;
+}
+static inline int mem_root_dynamic_array_resize_and_set_val(MEM_ROOT_DYNAMIC_ARRAY *array,
+                                   const void *element, size_t idx)
+{
+  if (array->malloc_flags & MY_BUFFER_NO_RESIZE)
+    return TRUE;
+
+  if (idx >= array->max_element)
+  {
+    if (mem_root_allocate_dynamic(array->mem_root, array, idx))
+      return 1;
+    array->elements++;
+  }
+
+  /*
+     Ensure the array size has increased and the index is
+     now well within the array bounds.
+  */
+  DBUG_ASSERT(idx < array->max_element);
+
+  memcpy(array->buffer+(idx * array->size_of_element), element,
+         array->size_of_element);
+
+  return FALSE;
+}
+
+static inline void* mem_root_dynamic_array_resize_and_get_val(MEM_ROOT_DYNAMIC_ARRAY *array, size_t idx)
+{
+  if (array->malloc_flags & MY_BUFFER_NO_RESIZE)
+    return NULL;
+
+  if (idx >= array->max_element)
+  {
+    if (mem_root_allocate_dynamic(array->mem_root, array, idx))
+      return NULL;
+  }
+
+  /*
+     Ensure the array size has increased and the index is
+     now well within the array bounds.
+  */
+  DBUG_ASSERT(idx < array->max_element);
+
+  return mem_root_dynamic_array_get_val(array, idx);
+}
 
 #include <mysql/psi/psi.h>
 

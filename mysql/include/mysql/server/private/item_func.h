@@ -46,6 +46,7 @@ protected:
   bool check_argument_types_traditional_scalar(uint start, uint end) const;
   bool check_argument_types_or_binary(const Type_handler *handler,
                                       uint start, uint end) const;
+  bool check_argument_types_can_return_bool(uint start, uint end) const;
   bool check_argument_types_can_return_int(uint start, uint end) const;
   bool check_argument_types_can_return_real(uint start, uint end) const;
   bool check_argument_types_can_return_str(uint start, uint end) const;
@@ -97,7 +98,7 @@ public:
 		  INTERVAL_FUNC, ISNOTNULLTEST_FUNC,
 		  SP_EQUALS_FUNC, SP_DISJOINT_FUNC,SP_INTERSECTS_FUNC,
 		  SP_TOUCHES_FUNC,SP_CROSSES_FUNC,SP_WITHIN_FUNC,
-		  SP_CONTAINS_FUNC,SP_OVERLAPS_FUNC,
+		  SP_CONTAINS_FUNC, SP_COVEREDBY_FUNC, SP_OVERLAPS_FUNC,
 		  SP_STARTPOINT,SP_ENDPOINT,SP_EXTERIORRING,
 		  SP_POINTN,SP_GEOMETRYN,SP_INTERIORRINGN, SP_RELATE_FUNC,
                   NOT_FUNC, NOT_ALL_FUNC, TEMPTABLE_ROWID,
@@ -743,6 +744,44 @@ public:
   };
 
 
+  class Handler_double: public Handler
+  {
+  public:
+    const Type_handler *return_type_handler(const Item_handled_func *)
+                                                        const override
+    {
+      return &type_handler_double;
+    }
+
+    String *val_str(Item_handled_func *item, String *to) const override
+    {
+      double nr= val_real(item);
+      if (item->null_value)
+        return 0;
+      to->set_real(nr, NOT_FIXED_DEC, item->collation.collation);
+      return to;
+    }
+    String *val_str_ascii(Item_handled_func *item, String *to) const override
+    {
+      return item->Item::val_str_ascii(to);
+    }
+    double val_real(Item_handled_func *item) const override= 0;
+    my_decimal *val_decimal(Item_handled_func *item, my_decimal *to) const override
+    {
+      return item->val_decimal_from_real(to);
+    }
+    bool get_date(THD *thd, Item_handled_func *item,
+                  MYSQL_TIME *to, date_mode_t fuzzydate) const override
+    {
+      return item->get_date_from_real(thd, to, fuzzydate);
+    }
+    longlong val_int(Item_handled_func *item) const override
+    {
+      return item->val_int_from_real();
+    }
+  };
+
+
   class Handler_int: public Handler
   {
   public:
@@ -827,10 +866,16 @@ public:
 protected:
   const Handler *m_func_handler;
 public:
+  Item_handled_func(THD *thd)
+   :Item_func(thd), m_func_handler(NULL) { }
+  Item_handled_func(THD *thd, List<Item> & args)
+   :Item_func(thd, args), m_func_handler(NULL) { }
   Item_handled_func(THD *thd, Item *a)
    :Item_func(thd, a), m_func_handler(NULL) { }
   Item_handled_func(THD *thd, Item *a, Item *b)
    :Item_func(thd, a, b), m_func_handler(NULL) { }
+  Item_handled_func(THD *thd, Item *a, Item *b, Item *c)
+  :Item_func(thd, a, b, c), m_func_handler(NULL) { }
   void set_func_handler(const Handler *handler)
   {
     m_func_handler= handler;
@@ -874,6 +919,12 @@ public:
   bool val_native(THD *thd, Native *to) override
   {
     return m_func_handler->val_native(thd, this, to);
+  }
+  virtual bool get_date_common(THD *thd, MYSQL_TIME *ltime,
+                               date_mode_t fuzzydate, timestamp_type)
+  {
+    DBUG_ASSERT(0);
+    return 0;
   }
 };
 
@@ -987,6 +1038,12 @@ public:
     return Item_func_hybrid_field_type::type_handler()->
            Item_func_hybrid_field_type_val_int(this);
   }
+  Type_ref_null val_ref(THD *thd) override
+  {
+    DBUG_ASSERT(fixed());
+    return Item_func_hybrid_field_type::type_handler()->
+           Item_func_hybrid_field_type_val_ref(thd, this);
+  }
   my_decimal *val_decimal(my_decimal *dec) override
   {
     DBUG_ASSERT(fixed());
@@ -1085,6 +1142,8 @@ public:
   virtual bool time_op(THD *thd, MYSQL_TIME *res)= 0;
 
   virtual bool native_op(THD *thd, Native *native)= 0;
+
+  virtual Type_ref_null ref_op(THD *thd)= 0;
 };
 
 
@@ -1097,6 +1156,15 @@ public:
 */
 class Item_func_case_expression: public Item_func_hybrid_field_type
 {
+  bool check_arguments() const override
+  {
+    /*
+      Arguments to CASE-style expressions are subject to aggregate_for_result()
+      and/or aggregate_for_comparision(). These methods validate the arguments.
+      No needs to check arguments here.
+    */
+    return false;
+  }
 public:
   Item_func_case_expression(THD *thd)
    :Item_func_hybrid_field_type(thd)
@@ -1157,6 +1225,11 @@ public:
   {
     DBUG_ASSERT(0);
     return true;
+  }
+  Type_ref_null ref_op(THD *thd) override
+  {
+    DBUG_ASSERT(0);
+    return Type_ref_null();
   }
 };
 
@@ -1350,14 +1423,16 @@ public:
 };
 
 
-class Cursor_ref
+class Cursor_ref: public sp_rcontext_ref
 {
 protected:
   LEX_CSTRING m_cursor_name;
-  uint m_cursor_offset;
-  class sp_cursor *get_open_cursor_or_error();
-  Cursor_ref(const LEX_CSTRING *name, uint offset)
-   :m_cursor_name(*name), m_cursor_offset(offset)
+public:
+  Cursor_ref(const LEX_CSTRING *name,
+             const Sp_rcontext_handler *h, uint offset,
+             const Sp_rcontext_handler *deref_rcontext_handler)
+   :sp_rcontext_ref(sp_rcontext_addr(h, offset), deref_rcontext_handler),
+    m_cursor_name(*name)
   { }
   void print_func(String *str, const LEX_CSTRING &func_name);
 };
@@ -1367,11 +1442,20 @@ protected:
 class Item_func_cursor_rowcount: public Item_longlong_func,
                                  public Cursor_ref
 {
+protected:
+  THD *m_thd;
 public:
-  Item_func_cursor_rowcount(THD *thd, const LEX_CSTRING *name, uint offset)
-   :Item_longlong_func(thd), Cursor_ref(name, offset)
+  Item_func_cursor_rowcount(THD *thd, const Cursor_ref &ref)
+   :Item_longlong_func(thd), Cursor_ref(ref), m_thd(nullptr)
   {
     set_maybe_null();
+  }
+  bool fix_fields(THD *thd, Item **ref) override
+  {
+    if (Item_longlong_func::fix_fields(thd, ref))
+      return true;
+    m_thd= thd;
+    return false;
   }
   LEX_CSTRING func_name_cstring() const override
   {
@@ -2182,6 +2266,11 @@ public:
   }
   bool fix_length_and_dec(THD *thd) override;
   String *str_op(String *str) override { DBUG_ASSERT(0); return 0; }
+  Type_ref_null ref_op(THD *thd) override
+  {
+    DBUG_ASSERT(0);
+    return Type_ref_null();
+  }
   bool native_op(THD *thd, Native *to) override;
 };
 
@@ -2257,6 +2346,11 @@ public:
     DBUG_ASSERT(0);
     return NULL;
   }
+  Type_ref_null ref_op(THD *thd) override
+  {
+    DBUG_ASSERT(0);
+    return Type_ref_null();
+  }
   void fix_arg_decimal();
   void fix_arg_int(const Type_handler *preferred,
                    const Type_std_attributes *preferred_attributes,
@@ -2318,7 +2412,7 @@ class Item_func_rownum final :public Item_longlong_func
 {
   /*
     This points to a variable that contains the number of rows
-    accpted so far in the result set
+    accepted so far in the result set
   */
   ha_rows *accepted_rows;
   SELECT_LEX *select;
@@ -2668,6 +2762,9 @@ public:
     return name;
   }
   bool fix_length_and_dec(THD *thd) override;
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
   bool eval_not_null_tables(void *) override
   {
     not_null_tables_cache= 0;
@@ -2746,6 +2843,9 @@ public:
 protected:
   Item *shallow_copy(THD *thd) const override
   { return get_item_copy<Item_func_field>(thd, this); }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
 };
 
 
@@ -3003,6 +3103,9 @@ public:
     base_flags&= ~item_base_t::MAYBE_NULL;
     return FALSE;
   }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
   void print(String *str, enum_query_type query_type) override;
   bool check_vcol_func_processor(void *arg) override
   {
@@ -3689,7 +3792,7 @@ public:
 
 /*
   This item represents user variable used as out parameter (e.g in LOAD DATA),
-  and it is supposed to be used only for this purprose. So it is simplified
+  and it is supposed to be used only for this purpose. So it is simplified
   a lot. Actually you should never obtain its value.
 
   The only two reasons for this thing being an Item is possibility to store it
@@ -4063,6 +4166,9 @@ public:
     base_flags&= ~item_base_t::MAYBE_NULL;
     return FALSE;
   }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
   bool check_vcol_func_processor(void *arg) override
   {
     return mark_unsupported_function(func_name(), "()", arg, VCOL_IMPOSSIBLE);
@@ -4234,9 +4340,14 @@ public:
                              const Tmp_field_param *param) override;
   Field *create_field_for_create_select(MEM_ROOT *root, TABLE *table) override
   {
-    return result_type() != STRING_RESULT ?
-           sp_result_field :
-           create_table_field_from_handler(root, table);
+    /*
+      The below call makes execution go through
+      type_handler()->make_table_field() which in case of SYS_REFCURSOR:
+        CREATE TABLE t1 AS SELECT stored_function_returning_sys_refcursor();
+      produces an error:
+       Illegal parameter data type sys_refcursor for operation 'CREATE TABLE'
+    */
+    return create_table_field_from_handler(root, table);
   }
   void make_send_field(THD *thd, Send_field *tmp_field) override;
 
@@ -4292,6 +4403,20 @@ public:
     if (execute())
       return true;
     return (null_value= sp_result_field->val_native(to));
+  }
+
+  Type_ref_null val_ref(THD *thd) override
+  {
+    const Type_ref_null ref= execute() ? Type_ref_null() :
+                                         sp_result_field->val_ref(thd);
+    if (with_complex_data_types())
+      expr_event_handler_args(thd, expr_event_t::DESTRUCT_ROUTINE_ARG);
+    return ref;
+  }
+  void expr_event_handler(THD *thd, expr_event_t event) override
+  {
+    if (with_complex_data_types())
+      sp_result_field->expr_event_handler(thd, event);
   }
 
   void update_null_value() override
@@ -4355,6 +4480,9 @@ public:
     base_flags&= ~item_base_t::MAYBE_NULL;
     return FALSE;
   }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
   bool check_vcol_func_processor(void *arg) override
   {
     return mark_unsupported_function(func_name(), "()", arg, VCOL_IMPOSSIBLE);
@@ -4414,6 +4542,9 @@ public:
     max_length= 11;
     return FALSE;
   }
+  // block standard processor for never null
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  { return 0; }
 protected:
   Item *shallow_copy(THD *thd) const override
   { return get_item_copy<Item_func_sqlcode>(thd, this); }
@@ -4460,6 +4591,7 @@ public:
   my_decimal *val_decimal(my_decimal *) override;
   bool get_date(THD *thd, MYSQL_TIME *ltime, date_mode_t fuzzydate) override;
   bool val_native(THD *thd, Native *) override;
+  Type_ref_null val_ref(THD *thd) override;
   bool fix_length_and_dec(THD *thd) override;
   LEX_CSTRING func_name_cstring() const override
   {
@@ -4478,7 +4610,7 @@ public:
     return false;
   }
   bool const_item() const override { return 0; }
-  void evaluate_sideeffects();
+  void evaluate_sideeffects(THD *thd);
   void update_used_tables() override
   {
     Item_func::update_used_tables();

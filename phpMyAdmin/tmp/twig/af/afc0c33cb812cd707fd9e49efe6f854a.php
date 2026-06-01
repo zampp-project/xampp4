@@ -226,6 +226,6 @@ yield _pgettext("Last page", "End");
 
     public function getSourceContext()
     {
-        return new Source("", "list_navigator.twig", "D:\\xampp4\\phpMyAdmin\\templates\\list_navigator.twig");
+        return new Source("", "list_navigator.twig", "D:\\test-public2\\phpMyAdmin\\templates\\list_navigator.twig");
     }
 }

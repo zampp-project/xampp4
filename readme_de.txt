@@ -1,12 +1,12 @@
-﻿###### ApacheFriends XAMPP Version 8.5.5 ######
+﻿###### ApacheFriends ZAMPP Version 8.5.6 ######
 
 Wichtig! PHP in diesem Paket benÃ¶tigt die Microsoft Visual C++ 2019 Redistributable Erweiterung von
 http://www.microsoft.com/en-us/download/. Bitte stellen Sie sicher das die VC++ 2019
 Runtime Bibliothek auf Ihrem System installiert ist.
 
-  + Apache 2.4.66
+  + Apache 2.4.67
   + MariaDB 11.8.6
-  + PHP 8.5.5 (VS16 X86 64bit thread safe) + PEAR
+  + PHP 8.5.6 (VS16 X86 64bit thread safe) + PEAR
   + phpMyAdmin 5.2.3
   + OpenSSL 3.6.1
   + ADOdb 518a
@@ -15,7 +15,7 @@ Runtime Bibliothek auf Ihrem System installiert ist.
   + Webalizer 2.23-04 (not included in the portable version)
   + Strawberry Perl 5.32.1.1 Portable
   + Tomcat 8.5.96
-  + XAMPP Control Panel Version 4.0.0.
+  + XAMPP Control Panel Version 4.0.1.
   + XAMPP mailToDisk 1.0 (schreibt verdendete Mails Ã¼ber PHP auf die Festplatte unter <xampp>\mailoutput. In der php.ini als Mail Default aktiviert.)
 
 ---------------------------------------------------------------

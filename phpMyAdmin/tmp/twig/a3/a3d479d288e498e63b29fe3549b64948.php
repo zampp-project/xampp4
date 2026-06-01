@@ -92,6 +92,6 @@ yield _gettext("Close");
 
     public function getSourceContext()
     {
-        return new Source("", "modals/enum_set_editor.twig", "D:\\xampp4\\phpMyAdmin\\templates\\modals\\enum_set_editor.twig");
+        return new Source("", "modals/enum_set_editor.twig", "D:\\test-public2\\phpMyAdmin\\templates\\modals\\enum_set_editor.twig");
     }
 }

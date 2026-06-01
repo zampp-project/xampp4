@@ -196,6 +196,7 @@ public:
   Spvar_definition m_return_field_def; /**< This is used for FUNCTIONs only. */
 
   const char *m_tmp_query;	///< Temporary pointer to sub query string
+
 private:
   /*
     Private to guarantee that m_chistics.comment is properly set to:
@@ -210,6 +211,7 @@ private:
     m_chistics.agg_type= type;
   }
 public:
+  Sql_path   m_sql_path;
   sql_mode_t m_sql_mode;		///< For SHOW CREATE and execution
   bool       m_explicit_name;                   /**< Prepend the db name? */
   LEX_CSTRING m_qname;		///< db.name
@@ -226,6 +228,7 @@ public:
   bool detistic() const { return m_chistics.detistic; }
   enum_sp_data_access daccess() const { return m_chistics.daccess; }
   enum_sp_aggregate_type agg_type() const { return m_chistics.agg_type; }
+
   /**
     Is this routine being executed?
   */
@@ -286,7 +289,7 @@ public:
   /** Recursion level of the current SP instance. The levels are numbered from 0 */
   ulong m_recursion_level;
   /**
-    A list of diferent recursion level instances for the same procedure.
+    A list of different recursion level instances for the same procedure.
     For every recursion level we have a sp_head instance. This instances
     connected in the list. The list ordered by increasing recursion level
     (m_recursion_level).
@@ -299,7 +302,7 @@ public:
   /**
     Pointer to the first free (non-INVOKED) routine in the list of
     cached instances for this SP. This pointer is set only for the first
-    SP in the list of instences (see above m_first_cached_sp pointer).
+    SP in the list of instances (see above m_first_cached_sp pointer).
     The pointer equal to 0 if we have no free instances.
     For non-first instance value of this pointer meanless (point to itself);
   */
@@ -316,7 +319,7 @@ public:
     by using for this set same objects that are used in 'sroutines' sets
     for statements of which this stored routine consists.
   */
-  HASH m_sroutines;
+  Sroutine_hash m_sroutines;
   // Pointers set during parsing
   const char *m_param_begin;
   const char *m_param_end;
@@ -339,13 +342,14 @@ public:
 
 protected:
   sp_head(MEM_ROOT *mem_root, sp_package *parent, const Sp_handler *handler,
-          enum_sp_aggregate_type agg_type, sql_mode_t sql_mode);
+          enum_sp_aggregate_type agg_type, sql_mode_t sql_mode,
+          const Sql_path &sql_path);
   virtual ~sp_head();
 public:
   static void destroy(sp_head *sp);
   static sp_head *create(sp_package *parent, const Sp_handler *handler,
                          enum_sp_aggregate_type agg_type, sql_mode_t sql_mode,
-                         MEM_ROOT *sp_mem_root);
+                         const Sql_path &sql_path, MEM_ROOT *sp_mem_root);
 
   /// Initialize after we have reset mem_root
   void
@@ -411,6 +415,8 @@ public:
   bool
   add_instr_preturn(THD *thd, sp_pcontext *spcont);
 
+  bool add_sp_block_destruct_variables(THD *thd, sp_pcontext *pctx);
+
   Item *adjust_assignment_source(THD *thd, Item *val, Item *val2);
   /**
     @param thd                     - the current thd
@@ -454,7 +460,9 @@ protected:
                              const Table_ident &ref) const;
 private:
   /**
-    Generate a code to set a single cursor parameter variable.
+    Generate a code to set a single cursor parameter variable:
+      OPEN c(1);
+
     @param thd          - current thd, for mem_root allocations.
     @param param_spcont - the context of the parameter block
     @param idx          - the index of the parameter
@@ -492,6 +500,17 @@ private:
     return false;
   }
 
+  /*
+    Generate instructions to set a single cursor placeholder
+    from a USING clause expresion:
+      OPEN c USING 1;
+  */
+  bool add_set_cursor_placeholder(THD *thd,
+                                  sp_pcontext *spcont,
+                                  const sp_rcontext_ref &cursor_ref,
+                                  uint placeholder_offset,
+                                  sp_assignment_lex *value);
+
   /**
     Generate a code to set all cursor parameter variables.
     This method is called only when parameters exists,
@@ -512,6 +531,21 @@ private:
     return false;
   }
 
+  // Generate instructions to set all cursor placeholders.
+  bool add_set_cursor_placeholders(THD *thd, sp_pcontext *spcont,
+                                   const sp_rcontext_ref &cursor_ref,
+                                   List<sp_assignment_lex> *using_clause)
+  {
+    sp_assignment_lex *value;
+    List_iterator<sp_assignment_lex> li(*using_clause);
+    for (uint idx= 0; (value= li++); idx++)
+    {
+      if (add_set_cursor_placeholder(thd, spcont, cursor_ref, idx, value))
+        return true;
+    }
+    return false;
+  }
+
   /**
     Generate a code to set all cursor parameter variables for a FOR LOOP, e.g.:
       FOR index IN cursor(1,2,3)
@@ -525,6 +559,7 @@ private:
   bool bind_input_param(THD *thd,
                         Item *arg_item,
                         uint arg_no,
+                        sp_rcontext *octx,
                         sp_rcontext *nctx,
                         bool is_function);
 
@@ -541,7 +576,8 @@ public:
     @param spcont       - the context of the cursor
     @param offset       - the offset of the cursor
     @param param_spcont - the context of the cursor parameter block
-    @param parameters   - the list of the OPEN actual parameters
+    @param parameters   - the list of the OPEN parenthesized actual parameters
+    @param using_clause - the USING clause expressions
 
     The caller must make sure that the number of local variables
     in "param_spcont" (formal parameters) matches the number of list elements
@@ -551,7 +587,21 @@ public:
   bool add_open_cursor(THD *thd, sp_pcontext *spcont,
                        uint offset,
                        sp_pcontext *param_spcont,
-                       List<sp_assignment_lex> *parameters);
+                       List<sp_assignment_lex> *parameters,
+                       List<sp_assignment_lex> *using_clause);
+
+  /**
+    Generate a code for an "OPEN cursor FOR" statement.
+    @param thd              - current thd, for mem_root allocations
+    @param spcont           - the context of the cursor
+    @param cursor_ref       - the cursor address or reference
+    @param *stmt            - the cursor statement or query string
+    @param using_clause     - the USING clause parameters
+  */
+  bool add_open_cursor_for_stmt(THD *thd, sp_pcontext *spcont,
+                                const sp_rcontext_ref &cursor_ref,
+                                sp_lex_cursor *stmt,
+                                List<sp_assignment_lex> *using_clause);
 
   /**
     Generate an initiation code for a CURSOR FOR LOOP, e.g.:
@@ -559,7 +609,7 @@ public:
       FOR index IN cursor(1,2,3)  -- cursor with parameters
 
     The code generated by this method does the following during SP run-time:
-    - Sets all cursor parameter vartiables from "parameters"
+    - Sets all cursor parameter variables from "parameters"
     - Initializes the index ROW-type variable from the cursor
       (the structure is copied from the cursor to the index variable)
     - The cursor gets opened
@@ -651,7 +701,7 @@ public:
       initialized and linked. It gets automatically deleted
       by the Bison %destructor in sql_yacc.yy.
     */
-    LEX *oldlex= (LEX *) m_lex.pop();
+    LEX *oldlex= m_lex.pop();
     if (!oldlex)
       DBUG_RETURN(false); // Nothing to restore
     // This restores thd->lex and thd->stmt_lex
@@ -822,6 +872,11 @@ public:
                                  const LEX_CSTRING &db,
                                  const LEX_CSTRING &table,
                                  const LEX_CSTRING &column);
+  bool spvar_def_fill_rowtype_reference(THD *thd, Spvar_definition *def,
+                                        const LEX_CSTRING &table);
+  bool spvar_def_fill_rowtype_reference(THD *thd, Spvar_definition *def,
+                                        const LEX_CSTRING &db,
+                                        const LEX_CSTRING &table);
 
   void set_c_chistics(const st_sp_chistics &chistics);
   void set_info(longlong created, longlong modified,
@@ -938,7 +993,7 @@ public:
 
   /*
     Check EXECUTE access:
-    - in case of a standalone rotuine, for the routine itself
+    - in case of a standalone routine, for the routine itself
     - in case of a package routine, for the owner package body
   */
   bool check_execute_access(THD *thd) const;
@@ -1094,16 +1149,14 @@ public:
   bool m_is_cloning_routine;
 
 private:
-  sp_package(MEM_ROOT *mem_root,
-             LEX *top_level_lex,
-             const sp_name *name,
-             const Sp_handler *sph,
-             sql_mode_t sql_mode);
+  sp_package(MEM_ROOT *mem_root, LEX *top_level_lex, const sp_name *name,
+             const Sp_handler *sph, sql_mode_t sql_mode,
+             const Sql_path &sql_path);
   ~sp_package();
 public:
   static sp_package *create(LEX *top_level_lex, const sp_name *name,
                             const Sp_handler *sph, sql_mode_t sql_mode,
-                            MEM_ROOT *sp_mem_root);
+                            const Sql_path &sql_path, MEM_ROOT *sp_mem_root);
 
   bool add_routine_declaration(LEX *lex)
   {

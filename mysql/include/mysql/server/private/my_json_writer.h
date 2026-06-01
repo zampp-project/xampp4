@@ -32,7 +32,11 @@
 #else
 #include "sql_class.h"  // For class THD
 #include "log.h" // for sql_print_error
+#ifndef NDEBUG
 #define VALIDITY_ASSERT(x) DBUG_ASSERT(x)
+#else
+#define VALIDITY_ASSERT(x) do { } while (0)
+#endif
 #endif
 
 #include <type_traits>
@@ -53,8 +57,8 @@ using JOIN_TAB= struct st_join_table;
 
     arrayName : [ "boo", 123, 456 ] 
 
-  and actually print them on one line. Arrrays that occupy too much space on
-  the line, or have nested members cannot be printed on one line.
+  and actually print them on one line. Arrays that occupy too much space on
+  the line, or have nested members, cannot be printed on one line.
   
   We hook into JSON printing functions and try to detect the pattern. While
   detecting the pattern, we will accumulate "boo", 123, 456 as strings.
@@ -76,7 +80,7 @@ class Single_line_formatting_helper
   };
 
   /*
-    This works like a finite automaton. 
+    This works like a finite automation.
 
     state=DISABLED means the helper is disabled - all on_XXX functions will
     return false (which means "not handled") and do nothing.
@@ -523,8 +527,12 @@ public:
   }
   Json_writer_object& add(const char *name, const char *value, size_t num_bytes)
   {
-    add_member(name);
-    context.add_str(value, num_bytes);
+    DBUG_ASSERT(!closed);
+    if (my_writer)
+    {
+      add_member(name);
+      context.add_str(value, num_bytes);
+    }
     return *this;
   }
   Json_writer_object& add(const char *name, const LEX_CSTRING &value)
@@ -738,7 +746,7 @@ public:
 /*
   RAII-based class to disable writing into the JSON document
   The tracing is disabled as soon as the object is created.
-  The destuctor is called as soon as we exit the scope of the object
+  The destructor is called as soon as we exit the scope of the object
   and the tracing is enabled back.
 */
 
@@ -754,7 +762,7 @@ public:
   RAII-based helper class to detect incorrect use of Json_writer.
 
   The idea is that a function typically must leave Json_writer at the same
-  identation level as it was when it was invoked. Leaving it at a different 
+  indentation level as it was when it was invoked. Leaving it at a different
   level typically means we forgot to close an object or an array
 
   So, here is a way to guard

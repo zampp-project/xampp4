@@ -15,7 +15,7 @@
  */
 
 /* 
- * apu.h is duplicated from apu.hw at build time -- do not edit apu.h
+ * apu.h is duplicated from apu.hwc at build time -- do not edit apu.h
  */
 /* @file apu.h
  * @brief APR-Utility main file
@@ -135,7 +135,6 @@
 #ifndef APU_DSO_MODULE_BUILD
 #define APU_HAVE_OPENSSL        1
 #define APU_HAVE_NSS            0
-#define APU_HAVE_COMMONCRYPTO   0
 #endif
 
 #define APU_HAVE_APR_ICONV      1

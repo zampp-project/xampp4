@@ -1,21 +1,15 @@
 <?php
 /*
- * This is needed for cookie based authentication to encrypt password in
- * cookie
+ * phpMyAdmin configuration for portable local ZAMPP.
+ * Basic root login only. No pma controluser / advanced storage required.
  */
-//$cfg['blowfish_secret'] = 'xampp'; /* YOU SHOULD CHANGE THIS FOR A MORE SECURE COOKIE AUTH! */
-$cfg['blowfish_secret'] = 'xampp';
-/*
- * Servers configuration
- */
-$i = 0;
 
-/*
- * First server
- */
+$cfg['blowfish_secret'] = 'xampp_local_development_only_change_me_32';
+
+$i = 0;
 $i++;
 
-/* Authentication type and info */
+/* Basic local authentication */
 $cfg['Servers'][$i]['auth_type'] = 'config';
 $cfg['Servers'][$i]['user'] = 'root';
 $cfg['Servers'][$i]['password'] = '';
@@ -23,39 +17,16 @@ $cfg['Servers'][$i]['extension'] = 'mysqli';
 $cfg['Servers'][$i]['AllowNoPassword'] = true;
 $cfg['Lang'] = '';
 
-/* Bind to the localhost ipv4 address and tcp */
+/* Bind to localhost IPv4 over TCP */
 $cfg['Servers'][$i]['host'] = '127.0.0.1';
 $cfg['Servers'][$i]['connect_type'] = 'tcp';
 
-/* User for advanced features */
-$cfg['Servers'][$i]['controluser'] = 'pma';
-$cfg['Servers'][$i]['controlpass'] = 'pma_xampp_local_only';
-
-/* Advanced phpMyAdmin features */
-$cfg['Servers'][$i]['pmadb'] = 'phpmyadmin';
-$cfg['Servers'][$i]['bookmarktable'] = 'pma__bookmark';
-$cfg['Servers'][$i]['relation'] = 'pma__relation';
-$cfg['Servers'][$i]['table_info'] = 'pma__table_info';
-$cfg['Servers'][$i]['table_coords'] = 'pma__table_coords';
-$cfg['Servers'][$i]['pdf_pages'] = 'pma__pdf_pages';
-$cfg['Servers'][$i]['column_info'] = 'pma__column_info';
-$cfg['Servers'][$i]['history'] = 'pma__history';
-$cfg['Servers'][$i]['designer_coords'] = 'pma__designer_coords';
-$cfg['Servers'][$i]['tracking'] = 'pma__tracking';
-$cfg['Servers'][$i]['userconfig'] = 'pma__userconfig';
-$cfg['Servers'][$i]['recent'] = 'pma__recent';
-$cfg['Servers'][$i]['table_uiprefs'] = 'pma__table_uiprefs';
-$cfg['Servers'][$i]['users'] = 'pma__users';
-$cfg['Servers'][$i]['usergroups'] = 'pma__usergroups';
-$cfg['Servers'][$i]['navigationhiding'] = 'pma__navigationhiding';
-$cfg['Servers'][$i]['savedsearches'] = 'pma__savedsearches';
-$cfg['Servers'][$i]['central_columns'] = 'pma__central_columns';
-$cfg['Servers'][$i]['designer_settings'] = 'pma__designer_settings';
-$cfg['Servers'][$i]['export_templates'] = 'pma__export_templates';
-$cfg['Servers'][$i]['favorite'] = 'pma__favorite';
-
 /*
- * End of servers configuration
+ * Portable ZAMPP default:
+ * Do not use phpMyAdmin advanced configuration storage by default.
+ * This avoids requiring a pma@localhost control user or phpmyadmin database.
  */
+$cfg['PmaNoRelation_DisableWarning'] = true;
+$cfg['TempDir'] = __DIR__ . '/tmp';
 
 ?>

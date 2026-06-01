@@ -116,6 +116,6 @@ yield _gettext("(current)");
 
     public function getSourceContext()
     {
-        return new Source("", "top_menu.twig", "D:\\xampp4\\phpMyAdmin\\templates\\top_menu.twig");
+        return new Source("", "top_menu.twig", "D:\\test-public2\\phpMyAdmin\\templates\\top_menu.twig");
     }
 }

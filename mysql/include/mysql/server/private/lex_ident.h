@@ -18,8 +18,11 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1335  USA
 */
 
+#include "my_global.h"
+#include "m_ctype.h"
 #include "char_buffer.h"
 #include "lex_string.h"
+#include "my_sys.h"
 
 extern MYSQL_PLUGIN_IMPORT CHARSET_INFO *table_alias_charset;
 
@@ -53,7 +56,7 @@ struct Compare_ident_ci
     1.  {ptr==NULL,length==0} is valid and means "NULL identifier".
     2a. {ptr<>NULL,length==0} means "empty identifier".
     2b. {ptr<>NULL,length>0}  means "not empty identifier.
-  In case of 2a and 2b, ptr must be a '\0'-terninated string.
+  In case of 2a and 2b, ptr must be a '\0'-terminated string.
 
   Comparison operands passed to streq() are not required to be 0-terminated.
 
@@ -61,7 +64,7 @@ struct Compare_ident_ci
   - inside methods of this class
   - inside st_charset_info::streq() in include/m_ctype.h
   The caller must make sure to maintain the object in the valid state,
-  as well as provide valid LEX_CSTRING instances for comparion.
+  as well as provide valid LEX_CSTRING instances for comparison.
 
   For better code stability, the Lex_cstring base should eventually be
   encapsulated, so the object debug validation is done at constructor
@@ -127,6 +130,37 @@ public:
     DBUG_ASSERT(is_valid_ident());
     DBUG_ASSERT(b.is_valid_ident());
     return Compare().charset_info()->streq(*this, b);
+  }
+  /*
+   Compare two identifiers safely, handling NULL and empty identifiers.
+
+   Returns true if both are empty (length=0), false if one of them is empty.
+   Otherwise calls streq() for a deep character-set based comparison.
+   Treats "NULL identifier" and "empty identifier" as equal.
+
+   Replacement for streq calls that resulted in UBSAN error: applying
+   zero/non-zero offset to null pointer.
+  */
+  static bool streq_safe(const LEX_CSTRING &a, const LEX_CSTRING &b)
+  {
+    if (a.length == 0 || b.length == 0)
+      return a.length == b.length;
+    return Lex_ident::streq(a, b);
+  }
+  bool streq_safe(const LEX_CSTRING &rhs) const
+  {
+    DBUG_ASSERT(is_valid_ident());
+    if (length == 0 || rhs.length == 0)
+      return length == rhs.length;
+    return streq(rhs);
+  }
+  bool streq_safe(const Lex_ident &b) const
+  {
+    DBUG_ASSERT(is_valid_ident());
+    DBUG_ASSERT(b.is_valid_ident());
+    if (length == 0 || b.length == 0)
+      return length == b.length;
+    return streq(b);
   }
 };
 
@@ -468,7 +502,7 @@ public:
   Lex_ident_db::check_name().
 
   Note, the database name passed to the constructor can originally
-  come from the parser and can be of an atribtrary long length.
+  come from the parser and can be of an arbitrary long length.
   Let's reserve additional buffer space for one extra character
   (SYSTEM_CHARSET_MBMAXLEN bytes), so Lex_ident_db::check_name() can
   still detect too long names even if the constructor cuts the data.

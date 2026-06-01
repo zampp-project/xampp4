@@ -19,6 +19,7 @@
 #define SPATIAL_INCLUDED
 
 #include "sql_string.h"                         /* String, LEX_STRING */
+#include <vector>
 #include <my_compiler.h>
 #include <json_lib.h>
 
@@ -27,9 +28,11 @@ class Gis_read_stream;
 #include "gcalc_tools.h"
 
 const uint SRID_SIZE= 4;
+const uint32 SRID_PLACEHOLDER= 0;
 const uint SIZEOF_STORED_DOUBLE= 8;
-const uint POINT_DATA_SIZE= (SIZEOF_STORED_DOUBLE * 2); 
-const uint WKB_HEADER_SIZE= 1+4;
+const uint BYTE_ORDER_SIZE= 1;
+const uint POINT_DATA_SIZE= (SIZEOF_STORED_DOUBLE * 2);
+const uint WKB_HEADER_SIZE= BYTE_ORDER_SIZE + 4;
 const uint32 GET_SIZE_ERROR= ((uint32) -1);
 
 struct st_point_2d
@@ -151,6 +154,8 @@ struct MBR
     return ((mbr->xmin >= xmin) && (mbr->ymin >= ymin) &&
 	    (mbr->xmax <= xmax) && (mbr->ymax <= ymax));
   }
+
+  int coveredby(const MBR *mbr);
 
   bool inner_point(double x, double y) const
   {
@@ -300,6 +305,8 @@ public:
   virtual int geom_length(double *len, const char **end) const  { return -1; }
   virtual int area(double *ar, const char **end) const { return -1;}
   virtual int is_closed(int *closed) const { return -1; }
+  virtual int is_valid(int *valid) const { return -1; }
+  virtual int simplify(String* result, double max_distance) const { return -1; }
   virtual int num_interior_ring(uint32 *n_int_rings) const { return -1; }
   virtual int num_points(uint32 *n_points) const { return -1; }
   virtual int num_geometries(uint32 *num) const { return -1; }
@@ -311,7 +318,8 @@ public:
   virtual int interior_ring_n(uint32 num, String *result) const { return -1; }
   virtual int geometry_n(uint32 num, String *result) const { return -1; }
   virtual int store_shapes(Gcalc_shape_transporter *trn) const=0;
-
+  virtual int is_clockwise(int *result) const { return -1; }
+  virtual int make_clockwise(String *result) const{ return -1; }
 public:
   static Geometry *create_by_typeid(Geometry_buffer *buffer, int type_id);
 
@@ -348,9 +356,11 @@ public:
   }
 
   bool envelope(String *result) const;
+  int is_simple(int *simple) const;
   static Class_info *ci_collection[wkb_last+1];
 
   static bool create_point(String *result, double x, double y);
+  using PointContainer = std::vector<std::pair<double, double>>;
 protected:
   static Class_info *find_class(int type_id)
   {
@@ -363,8 +373,16 @@ protected:
   bool create_point(String *result, const char *data) const;
   const char *get_mbr_for_points(MBR *mbr, const char *data, uint offset)
     const;
+  const char* get_points_common(const char* data, PointContainer &points) const;
 
 public:
+  virtual bool get_points(Geometry::PointContainer &points) const
+  {
+    // TODO implement this override for other types
+    assert(false);
+    return true;
+  }
+
   /**
      Check if there're enough data remaining as requested
 
@@ -402,7 +420,7 @@ protected:
 
 
 /***************************** Point *******************************/
- 
+
 class Gis_point: public Geometry
 {
 public:
@@ -416,7 +434,8 @@ public:
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
-  
+  int is_valid(int *valid) const override;
+
   int get_xy(double *x, double *y) const
   {
     const char *data= m_data;
@@ -489,7 +508,9 @@ public:
   int geom_length(double *len, const char **end) const override;
   int area(double *ar, const char **end) const override;
   int is_closed(int *closed) const override;
+  int simplify(String* result, double max_distance) const override;
   int num_points(uint32 *n_points) const override;
+  int is_valid(int *valid) const override;
   int start_point(String *point) const override;
   int end_point(String *point) const override;
   int point_n(uint32 n, String *result) const override;
@@ -500,6 +521,7 @@ public:
     return 0;
   }
   int store_shapes(Gcalc_shape_transporter *trn) const override;
+  int is_clockwise(int *result) const override;
   const Class_info *get_class_info() const override;
 };
 
@@ -520,7 +542,9 @@ public:
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
+  int is_valid(int *valid) const override;
   int area(double *ar, const char **end) const override;
+  int simplify(String* result, double max_distance) const override;
   int exterior_ring(String *result) const override;
   int num_interior_ring(uint32 *n_int_rings) const override;
   int interior_ring_n(uint32 num, String *result) const override;
@@ -533,7 +557,10 @@ public:
     return 0;
   }
   int store_shapes(Gcalc_shape_transporter *trn) const override;
+  int make_clockwise(String *result) const override;
   const Class_info *get_class_info() const override;
+private:
+  bool get_points(Geometry::PointContainer &points) const override;
 };
 
 
@@ -556,6 +583,7 @@ public:
   bool get_data_as_wkt(String *txt, const char **end) const override;
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
+  int is_valid(int *valid) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
   int num_geometries(uint32 *num) const override;
   int geometry_n(uint32 num, String *result) const override;
@@ -587,11 +615,13 @@ public:
   bool get_data_as_wkt(String *txt, const char **end) const override;
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
+  int is_valid(int *valid) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
   int num_geometries(uint32 *num) const override;
   int geometry_n(uint32 num, String *result) const override;
   int geom_length(double *len, const char **end) const override;
   int is_closed(int *closed) const override;
+  int simplify(String* result, double max_distance) const override;
   bool dimension(uint32 *dim, const char **end) const override
   {
     *dim= 1;
@@ -617,10 +647,12 @@ public:
   bool get_data_as_wkt(String *txt, const char **end) const override;
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
+  int is_valid(int *valid) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
   int num_geometries(uint32 *num) const override;
   int geometry_n(uint32 num, String *result) const override;
   int area(double *ar, const char **end) const override;
+  int simplify(String* result, double max_distance) const override;
   int centroid(String *result) const override;
   bool dimension(uint32 *dim, const char **end) const override
   {
@@ -629,8 +661,11 @@ public:
     return 0;
   }
   int store_shapes(Gcalc_shape_transporter *trn) const override;
+  int make_clockwise(String *result) const override;
   const Class_info *get_class_info() const override;
   uint init_from_opresult(String *bin, const char *opres, uint res_len) override;
+private:
+  int shapes_valid(int *valid) const;
 };
 
 
@@ -649,13 +684,16 @@ public:
   bool get_data_as_wkt(String *txt, const char **end) const override;
   bool get_data_as_json(String *txt, uint max_dec_digits,
                         const char **end) const override;
+  int is_valid(int *valid) const override;
   bool get_mbr(MBR *mbr, const char **end) const override;
   int area(double *ar, const char **end) const override;
+  int simplify(String* result, double max_distance) const override;
   int geom_length(double *len, const char **end) const override;
   int num_geometries(uint32 *num) const override;
   int geometry_n(uint32 num, String *result) const override;
   bool dimension(uint32 *dim, const char **end) const override;
   int store_shapes(Gcalc_shape_transporter *trn) const override;
+  int make_clockwise(String *result) const override;
   const Class_info *get_class_info() const override;
 };
 

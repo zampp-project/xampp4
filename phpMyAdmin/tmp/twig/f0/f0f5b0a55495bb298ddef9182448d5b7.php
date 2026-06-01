@@ -391,6 +391,6 @@ yield _gettext("Allow users to customize this value");
 
     public function getSourceContext()
     {
-        return new Source("", "config/form_display/input.twig", "D:\\xampp4\\phpMyAdmin\\templates\\config\\form_display\\input.twig");
+        return new Source("", "config/form_display/input.twig", "D:\\test-public2\\phpMyAdmin\\templates\\config\\form_display\\input.twig");
     }
 }

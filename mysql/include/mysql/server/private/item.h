@@ -28,6 +28,8 @@
 #include <typeinfo>
 
 #include "cset_narrowing.h"
+#include "sql_basic_types.h"
+
 
 C_MODE_START
 #include <ma_dyncol.h>
@@ -48,6 +50,10 @@ public:
   st_value(char *buffer, size_t buffer_size) :
   m_string(buffer, buffer_size, &my_charset_bin)
   {}
+  bool is_null() const
+  {
+    return m_type == DYN_COL_NULL;
+  }
   enum enum_dynamic_column_type m_type;
   union
   {
@@ -95,14 +101,18 @@ public:
 };
 
 
-#ifdef DBUG_OFF
-static inline const char *dbug_print_item(Item *item) { return NULL; }
-#else
-const char *dbug_print_item(Item *item);
-#endif
+struct ora_join_processor_param
+{
+  TABLE_LIST *inner;
+  List<TABLE_LIST> outer;
+  /* TRUE means Oracle join operator was used inside some OR clause */
+  bool or_present;
+};
+
 
 class Virtual_tmp_table;
 class sp_head;
+class sp_rcontext;
 class Protocol;
 struct TABLE_LIST;
 void item_init(void);			/* Init item functions */
@@ -414,68 +424,6 @@ typedef enum monotonicity_info
 
 /*************************************************************************/
 
-class sp_rcontext;
-
-/**
-  A helper class to collect different behavior of various kinds of SP variables:
-  - local SP variables and SP parameters
-  - PACKAGE BODY routine variables
-  - (there will be more kinds in the future)
-*/
-
-class Sp_rcontext_handler
-{
-public:
-  virtual ~Sp_rcontext_handler() = default;
-  /**
-    A prefix used for SP variable names in queries:
-    - EXPLAIN EXTENDED
-    - SHOW PROCEDURE CODE
-    Local variables and SP parameters have empty prefixes.
-    Package body variables are marked with a special prefix.
-    This improves readability of the output of these queries,
-    especially when a local variable or a parameter has the same
-    name with a package body variable.
-  */
-  virtual const LEX_CSTRING *get_name_prefix() const= 0;
-  /**
-    At execution time THD->spcont points to the run-time context (sp_rcontext)
-    of the currently executed routine.
-    Local variables store their data in the sp_rcontext pointed by thd->spcont.
-    Package body variables store data in separate sp_rcontext that belongs
-    to the package.
-    This method provides access to the proper sp_rcontext structure,
-    depending on the SP variable kind.
-  */
-  virtual sp_rcontext *get_rcontext(sp_rcontext *ctx) const= 0;
-};
-
-
-class Sp_rcontext_handler_local: public Sp_rcontext_handler
-{
-public:
-  const LEX_CSTRING *get_name_prefix() const override;
-  sp_rcontext *get_rcontext(sp_rcontext *ctx) const override;
-};
-
-
-class Sp_rcontext_handler_package_body: public Sp_rcontext_handler
-{
-public:
-  const LEX_CSTRING *get_name_prefix() const override;
-  sp_rcontext *get_rcontext(sp_rcontext *ctx) const override;
-};
-
-
-extern MYSQL_PLUGIN_IMPORT
-  Sp_rcontext_handler_local sp_rcontext_handler_local;
-
-
-extern MYSQL_PLUGIN_IMPORT
-  Sp_rcontext_handler_package_body sp_rcontext_handler_package_body;
-
-
-
 class Item_equal;
 
 struct st_join_table* const NO_PARTICULAR_TAB= (struct st_join_table*)0x1;
@@ -766,11 +714,9 @@ struct subselect_table_finder_param
 
 /****************************************************************************/
 
-#define STOP_PTR ((void *) 1)
-
 /* Base flags (including IN) for an item */
 
-typedef uint8 item_flags_t;
+typedef uint16 item_flags_t;
 
 enum class item_base_t : item_flags_t
 {
@@ -800,9 +746,12 @@ enum class item_with_t : item_flags_t
   WINDOW_FUNC= (1<<1), // If item contains a window func
   FIELD=       (1<<2), // If any item except Item_sum contains a field.
   SUM_FUNC=    (1<<3), // If item contains a sum func
-  SUBQUERY=    (1<<4), // If item containts a sub query
+  SUBQUERY=    (1<<4), // If item contains a subquery
   ROWNUM_FUNC= (1<<5), // If ROWNUM function was used
-  PARAM=       (1<<6)  // If user parameter was used
+  PARAM=       (1<<6), // If user parameter was used
+  COMPLEX_DATA_TYPE= (1<<7),// If the expression is of a complex data type which
+                            // requires special handling on destruction
+  ORA_JOIN=    (1<<8), // If Oracle join syntax was used
 };
 
 
@@ -860,6 +809,15 @@ static inline item_with_t operator~(const item_with_t a)
 {
   return (item_with_t) ~(item_flags_t) a;
 }
+
+
+/*
+  Flags of walking function
+*/
+typedef uint8 item_walk_flags;
+const item_walk_flags WALK_SUBQUERY=          1;
+const item_walk_flags WALK_NO_CACHE_PROCESS= (1<<1);
+const item_walk_flags WALK_NO_REF=           (1<<2);
 
 
 class Item :public Value_source,
@@ -985,6 +943,13 @@ protected:
     if ((null_value= item->null_value))
       res= NULL;
     return res;
+  }
+  bool val_native_result_from_item(THD *thd, Item *item, Native *to)
+  {
+    DBUG_ASSERT(fixed());
+    null_value= item->val_native_result(thd, to);
+    DBUG_ASSERT(null_value == item->null_value);
+    return null_value;
   }
   bool val_native_from_item(THD *thd, Item *item, Native *to)
   {
@@ -1119,6 +1084,10 @@ public:
   { return (bool) (with_flags & item_with_t::ROWNUM_FUNC); }
   inline bool with_param() const
   { return (bool) (with_flags & item_with_t::PARAM); }
+  inline bool with_complex_data_types() const
+  { return (bool) (with_flags & item_with_t::COMPLEX_DATA_TYPE); }
+  inline bool with_ora_join() const
+  { return (bool) (with_flags & item_with_t::ORA_JOIN); }
   inline void copy_flags(const Item *org, item_base_t mask)
   {
     base_flags= (item_base_t) (((item_flags_t) base_flags &
@@ -1245,9 +1214,9 @@ public:
     DBUG_ASSERT(0);
   }
 
-  bool save_in_value(THD *thd, st_value *value)
+  void save_in_value(THD *thd, st_value *value)
   {
-    return type_handler()->Item_save_in_value(thd, this, value);
+    type_handler()->Item_save_in_value(thd, this, value);
   }
 
   /* Function returns 1 on overflow and -1 on fatal errors */
@@ -1438,7 +1407,7 @@ public:
 
       The value of const is supplied implicitly as the value this item's
       argument, the form of $CMP$ comparison is specified through the
-      function's arguments. The calle returns the result interval
+      function's arguments. The call returns the result interval
          
          F(x) $CMP2$ F(const)
       
@@ -1741,6 +1710,23 @@ public:
   {
     return type_handler()->Item_val_bool(this);
   }
+
+  virtual Type_ref_null val_ref(THD *thd)
+  {
+    return Type_ref_null();
+  }
+
+  /*
+    expr_event_handler()
+    Performs extra handling on an Item, e.g. destruction
+    of the Item's value when the value is not needed any more.
+    See also:
+    - comments near expr_event_handler() in fields.h
+    - the definition of expr_event_t in sql_type.h
+    - Field_sys_refcursor::expr_event_handler() in /plugin/type_cursor/
+  */
+  virtual void expr_event_handler(THD *thd, expr_event_t event)
+  { }
 
   bool eval_const_cond()
   {
@@ -2084,6 +2070,7 @@ public:
                      (enum_query_type)(QT_ITEM_ORIGINAL_FUNC_NULLIF |
                                        QT_ITEM_IDENT_SKIP_DB_NAMES |
                                        QT_ITEM_IDENT_SKIP_TABLE_NAMES |
+                                       QT_DEFAULT_PARAM_INFO_SCHEMA |
                                        QT_NO_DATA_EXPANSION |
                                        QT_TO_SYSTEM_CHARSET |
                                        QT_FOR_FRM),
@@ -2103,7 +2090,7 @@ public:
   void print_value(String *str);
 
   virtual void update_used_tables() {}
-  virtual COND *build_equal_items(THD *thd, COND_EQUAL *inheited,
+  virtual COND *build_equal_items(THD *thd, COND_EQUAL *inherited,
                                   bool link_item_fields,
                                   COND_EQUAL **cond_equal_ref)
   {
@@ -2229,7 +2216,8 @@ public:
     return type_handler()->charset_for_protocol(this);
   };
 
-  virtual bool walk(Item_processor processor, bool walk_subquery, void *arg)
+  virtual bool walk(Item_processor processor, void *arg,
+                    item_walk_flags flags)
   {
     return (this->*processor)(arg);
   }
@@ -2301,7 +2289,19 @@ public:
   virtual bool register_field_in_write_map(void *arg) { return 0; }
   virtual bool register_field_in_bitmap(void *arg) { return 0; }
   virtual bool update_table_bitmaps_processor(void *arg) { return 0; }
-
+  /*
+    Compute the intersection of index coverings of all fields in the
+    tree. Used for updating the index coverings of vcols.
+  */
+  virtual bool intersect_field_part_of_key(void *arg) { return 0; }
+  /*
+    Get the name resolution context from the item and assign it to
+    arg, which should be the context of a newly created Item_field of
+    an indexed vcol in an indexed vcol substitution and the vcol
+    should have the same expression as the item for which walk is
+    invoked with this processor
+  */
+  virtual bool get_context_for_vcol_processor(void *arg) { return 0; }
   virtual bool enumerate_field_refs_processor(void *arg) { return 0; }
   virtual bool mark_as_eliminated_processor(void *arg) { return 0; }
   virtual bool eliminate_subselect_processor(void *arg) { return 0; }
@@ -2317,6 +2317,19 @@ public:
     is_expensive_cache= (int8)(-1);
     return 0;
   }
+  virtual bool ora_join_processor(void *arg) { return 0; }
+  /*
+    This marks the item as nullable. Note that if we'd want a method that
+    marks the item as not nullable (maybe_null=false) we'd need to process
+    carefully functions (e.g. json*) that can always return null even with
+    non-null arguments
+  */
+  virtual bool add_maybe_null_after_ora_join_processor(void *arg) { return 0; }
+  virtual bool remove_ora_join_processor(void *arg)
+  {
+    with_flags&= ~item_with_t::ORA_JOIN;
+    return 0;
+  }
 
   virtual bool set_extraction_flag_processor(void *arg)
   {
@@ -2327,7 +2340,7 @@ public:
 
   /* 
     TRUE if the expression depends only on the table indicated by tab_map
-    or can be converted to such an exression using equalities.
+    or can be converted to such an expression using equalities.
     Not to be used for AND/OR formulas.
   */
   virtual bool excl_dep_on_table(table_map tab_map) { return false; }
@@ -2547,6 +2560,7 @@ public:
   bool check_type_or_binary(const LEX_CSTRING &opname,
                             const Type_handler *handler) const;
   bool check_type_general_purpose_string(const LEX_CSTRING &opname) const;
+  bool check_type_can_return_bool(const LEX_CSTRING &opname) const;
   bool check_type_can_return_int(const LEX_CSTRING &opname) const;
   bool check_type_can_return_decimal(const LEX_CSTRING &opname) const;
   bool check_type_can_return_real(const LEX_CSTRING &opname) const;
@@ -2712,7 +2726,7 @@ public:
   virtual bool is_expensive()
   {
     if (is_expensive_cache < 0)
-      is_expensive_cache= walk(&Item::is_expensive_processor, 0, NULL);
+      is_expensive_cache= walk(&Item::is_expensive_processor, 0, 0);
     return MY_TEST(is_expensive_cache);
   }
   String *check_well_formed_result(String *str, bool send_error= 0);
@@ -2754,7 +2768,7 @@ public:
   table_map view_used_tables(TABLE_LIST *view)
   {
     view->view_used_tables= 0;
-    walk(&Item::view_used_tables_processor, 0, view);
+    walk(&Item::view_used_tables_processor, view, 0);
     return view->view_used_tables;
   }
 
@@ -2900,7 +2914,7 @@ bool cmp_items(Item *a, Item *b);
 
 
 /**
-  Array of items, e.g. function or aggerate function arguments.
+  Array of items, e.g. function or aggregate function arguments.
 */
 class Item_args
 {
@@ -2908,14 +2922,32 @@ protected:
   Item **args, *tmp_arg[2];
   uint arg_count;
   void set_arguments(THD *thd, List<Item> &list);
-  bool walk_args(Item_processor processor, bool walk_subquery, void *arg)
+  bool walk_args(Item_processor processor, void *arg, item_walk_flags flags)
   {
     for (uint i= 0; i < arg_count; i++)
     {
-      if (args[i]->walk(processor, walk_subquery, arg))
+      if (args[i]->walk(processor, arg, flags))
         return true;
     }
     return false;
+  }
+  bool is_any_arg_maybe_null()
+  {
+    for (uint i= 0; i < arg_count; i++)
+    {
+      if (args[i]->maybe_null())
+        return true;
+    }
+    return false;
+  }
+  bool is_all_arg_maybe_null()
+  {
+    for (uint i= 0; i < arg_count; i++)
+    {
+      if (!args[i]->maybe_null())
+        return false;
+    }
+    return true;
   }
   bool transform_args(THD *thd, Item_transformer transformer, uchar *arg);
   void propagate_equal_fields(THD *, const Item::Context &, COND_EQUAL *);
@@ -2923,7 +2955,12 @@ protected:
   {
     for (uint i= 0; i < arg_count; i++)
     {
-      if (args[i]->const_item())
+      /*
+        Constant expression doesn't need to be checked.
+        BUT if it still reports to have references to tables, we must check
+        that only allowed table is referred.
+      */
+      if (args[i]->const_item() && !args[i]->used_tables())
         continue;
       if (!args[i]->excl_dep_on_table(tab_map))
         return false;
@@ -3031,6 +3068,18 @@ public:
   inline uint argument_count() const { return arg_count; }
   inline void remove_arguments() { arg_count=0; }
   Sql_mode_dependency value_depends_on_sql_mode_bit_or() const;
+  void expr_event_handler_args(THD * thd, expr_event_t event,
+                               uint start, uint end)
+  {
+    DBUG_ASSERT(start <= end);
+    DBUG_ASSERT(end <= arg_count);
+    for (uint i= start; i < end; i++)
+      args[i]->expr_event_handler(thd, event);
+  }
+  void expr_event_handler_args(THD *thd, expr_event_t event)
+  {
+    expr_event_handler_args(thd, event, 0, arg_count);
+  }
 };
 
 
@@ -3220,11 +3269,20 @@ public:
   my_decimal *val_decimal(my_decimal *decimal_value) override;
   bool get_date(THD *thd, MYSQL_TIME *ltime, date_mode_t fuzzydate) override;
   bool val_native(THD *thd, Native *to) override;
+  Type_ref_null val_ref(THD *thd) override;
   bool is_null() override;
 
 public:
   void make_send_field(THD *thd, Send_field *field) override;
-  bool const_item() const override { return true; }
+  bool const_item() const override
+  {
+    /*
+      SP variables of tricky data types with side effects, e.g. SYS_REFCURSOR,
+      are not constants to avoid various item tree transformations
+      (e.g. by the optimizer).
+    */
+    return !type_handler()->is_complex();
+  }
   Field *create_tmp_field_ex(MEM_ROOT *root,
                              TABLE *table, Tmp_field_src *src,
                              const Tmp_field_param *param) override
@@ -3276,6 +3334,11 @@ protected:
   sp_rcontext *get_rcontext(sp_rcontext *local_ctx) const;
   Item_field *get_variable(sp_rcontext *ctx) const;
 
+  sp_rcontext_addr rcontext_addr() const
+  {
+    return sp_rcontext_addr(m_rcontext_handler, m_var_idx);
+  }
+
 public:
   Item_splocal(THD *thd, const Sp_rcontext_handler *rh,
                const LEX_CSTRING *sp_var_name, uint sp_var_idx,
@@ -3302,6 +3365,10 @@ public:
   { return this_item()->element_index(i); }
   Item** addr(uint i) override { return this_item()->addr(i); }
   bool check_cols(uint c) override;
+  const Sp_rcontext_handler *rcontext_handler() const
+  {
+    return m_rcontext_handler;
+  }
 
 private:
   bool set_value(THD *thd, sp_rcontext *ctx, Item **it) override;
@@ -3624,7 +3691,7 @@ public:
   void get_tmp_field_src(Tmp_field_src *src, const Tmp_field_param *param);
   /*
     This implementation of used_tables() used by Item_avg_field and
-    Item_variance_field which work when only temporary table left, so theu
+    Item_variance_field which work when only temporary table left, so they
     return table map of the temporary table.
   */
   table_map used_tables() const override { return 1; }
@@ -3706,6 +3773,10 @@ public:
     Collect outer references
   */
   bool collect_outer_ref_processor(void *arg) override;
+
+  bool ora_join_add_table_ref(ora_join_processor_param *arg,
+                              TABLE_LIST *table);
+
   friend bool insert_fields(THD *thd, Name_resolution_context *context,
                             const LEX_CSTRING &db_name,
                             const LEX_CSTRING &table_name,
@@ -3788,6 +3859,7 @@ public:
   my_decimal *val_decimal_result(my_decimal *) override;
   bool val_bool_result() override;
   bool is_null_result() override;
+  Type_ref_null val_ref(THD *thd) override;
   bool send(Protocol *protocol, st_value *buffer) override;
   Load_data_outvar *get_load_data_outvar() override { return this; }
   bool load_data_set_null(THD *thd, const Load_data_param *param) override
@@ -3916,6 +3988,8 @@ public:
   bool register_field_in_read_map(void *arg) override;
   bool register_field_in_write_map(void *arg) override;
   bool register_field_in_bitmap(void *arg) override;
+  bool intersect_field_part_of_key(void *arg) override;
+  bool get_context_for_vcol_processor(void *arg) override;
   bool check_partition_func_processor(void *) override {return false;}
   bool post_fix_fields_part_expr_processor(void *bool_arg) override;
   bool check_valid_arguments_processor(void *bool_arg) override;
@@ -3935,6 +4009,20 @@ public:
     }
     return 0;
   }
+  bool ora_join_processor(void *arg) override;
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  {
+    /*
+      Before this operation field nullability can not be removed
+      (only can be set).
+      maybe_null() store the old nullability state, and
+      field->maybe_null() is the current state.
+    */
+    DBUG_ASSERT(!maybe_null() || field->maybe_null());
+    set_maybe_null(field->maybe_null());
+    return 0;
+  }
+  bool check_ora_join(Item **reference, bool outer_ref_fixed);
   void cleanup() override;
   Item_equal *get_item_equal() override { return item_equal; }
   void set_item_equal(Item_equal *item_eq) override { item_equal= item_eq; }
@@ -4074,6 +4162,27 @@ protected:
   { return shallow_copy_with_checks(thd); }
 };
 
+
+/*
+  A pseudo-Item to parse Oracle style outer join operator:
+    WHERE t1.a = t2.b (+);
+*/
+class Item_join_operator_plus: public Item_null
+{
+public:
+  using Item_null::Item_null;
+  /*
+    Need to override as least one method to have an unique vtable,
+    to make dynamic_cast work.
+  */
+  void print(String *str, enum_query_type) override
+  {
+    str->append("(+)"_LEX_CSTRING);
+  }
+  static List<Item> *make_as_item_list(THD *thd);
+};
+
+
 class Item_null_result :public Item_null
 {
 public:
@@ -4130,10 +4239,10 @@ public:
      - Item_param::set_from_item(), for EXECUTE and EXECUTE IMMEDIATE.
 */
 
-class Item_param :public Item_basic_value,
-                  private Settable_routine_parameter,
-                  public Rewritable_query_parameter,
-                  private Type_handler_hybrid_field_type
+class Item_param final :public Item_basic_value,
+                        private Settable_routine_parameter,
+                        public Rewritable_query_parameter,
+                        private Type_handler_hybrid_field_type
 {
   /*
     NO_VALUE is a special value meaning that the parameter has not been
@@ -4318,6 +4427,25 @@ public:
     Item::cleanup();
   }
 
+  Type_ref_null val_ref_from_int() const
+  {
+    // Item_param uses value.integer as a storage for not-NULL references
+    const longlong *addr;
+    if (has_no_value() || !(addr= const_ptr_longlong()))
+      return Type_ref_null();
+    return Type_ref_null((ulonglong) *addr);
+  }
+
+  Type_ref_null val_ref(THD *thd) override
+  {
+    return type_handler()->Item_param_val_ref(thd, this);
+  }
+
+  void expr_event_handler(THD *thd, expr_event_t event) override
+  {
+    type_handler()->Item_param_expr_event_handler(thd, this, event);
+  }
+
   Type type() const override
   {
     // Don't pretend to be a constant unless value for this item is set.
@@ -4479,6 +4607,19 @@ public:
     value.set_handler(h); // See comments in set_param_func()
     return h->Item_param_set_from_value(thd, this, attr, val);
   }
+
+  /*
+    Set "this" from st_value.
+    @param thd                    - the current THD
+    @param value                  - the st_value instance to set from
+    @param th                     - the type handler of the "value"
+    @param attr                   - the attributes of "value", i.e.
+                                    of the Item who earlier initialized "value"
+                                    by using the method save_in_value().
+  */
+  bool set_from_value(THD *thd, const st_value &value,
+                      const Type_handler *th,
+                      const Type_all_attributes &attrs);
 
   bool set_limit_clause_param(longlong nr)
   {
@@ -4709,7 +4850,7 @@ protected:
   { return get_item_copy<Item_bool_static>(thd, this); }
 };
 
-/* The following variablese are stored in a read only segment */
+/* The following variables are stored in a read only segment */
 extern Item_bool_static *Item_false, *Item_true;
 
 class Item_uint :public Item_int
@@ -5895,11 +6036,18 @@ public:
     Used_tables_and_const_cache(item) { }
   Item_func_or_sum(THD *thd, List<Item> &list):
     Item_result_field(thd), Item_args(thd, list) { }
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg, item_walk_flags flags) override
   {
-    if (walk_args(processor, walk_subquery, arg))
+    if (walk_args(processor, arg, flags))
       return true;
     return (this->*processor)(arg);
+  }
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  {
+    // see Item::add_maybe_null_after_ora_join_processor
+    if (!maybe_null() && is_any_arg_maybe_null())
+      set_maybe_null();
+    return 0;
   }
   /*
     Built-in schema, e.g. mariadb_schema, oracle_schema, maxdb_schema
@@ -5914,7 +6062,7 @@ public:
     item to the debug log. The second use of this method is as
     a helper function of print() and error messages, where it is
     applicable. To suit both goals it should return a meaningful,
-    distinguishable and sintactically correct string. This method
+    distinguishable and syntactically correct string. This method
     should not be used for runtime type identification, use enum
     {Sum}Functype and Item_func::functype()/Item_sum::sum_func()
     instead.
@@ -6124,10 +6272,13 @@ public:
     return ref ? (*ref)->part_of_sortkey() : Item::part_of_sortkey();
   }
 
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg,
+            item_walk_flags flags) override
   {
+    if (flags & WALK_NO_REF)
+      return  (this->*processor)(arg);
     if (ref && *ref)
-      return (*ref)->walk(processor, walk_subquery, arg) ||
+      return (*ref)->walk(processor, arg, flags) ||
              (this->*processor)(arg); 
     else
       return FALSE;
@@ -6224,6 +6375,13 @@ public:
         ((Item_field *) item)->field && item->const_item())
       return 0;
     return cleanup_processor(arg);
+  }
+  bool ora_join_processor(void *arg) override;
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  {
+    if ((*ref)->maybe_null())
+      set_maybe_null();
+    return 0;
   }
   Item *field_transformer_for_having_pushdown(THD *thd, uchar *arg) override
   { return (*ref)->field_transformer_for_having_pushdown(thd, arg); }
@@ -6409,9 +6567,10 @@ public:
   bool const_item() const override { return orig_item->const_item(); }
   table_map not_null_tables() const override
   { return orig_item->not_null_tables(); }
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg,
+            item_walk_flags flags) override
   {
-    return orig_item->walk(processor, walk_subquery, arg) ||
+    return orig_item->walk(processor, arg, flags) ||
       (this->*processor)(arg);
   }
   bool enumerate_field_refs_processor(void *arg) override
@@ -6450,6 +6609,12 @@ protected:
   Item *shallow_copy(THD *thd) const override
   { return get_item_copy<Item_cache_wrapper>(thd, this); }
   Item *deep_copy(THD *) const override { return nullptr; }
+  bool add_maybe_null_after_ora_join_processor(void *arg) override
+  {
+    if (orig_item->maybe_null())
+      set_maybe_null();
+    return 0;
+  }
 };
 
 
@@ -6523,9 +6688,12 @@ public:
     return (*ref)->const_item() && (null_ref_table == NO_NULL_TABLE);
   }
   TABLE *get_null_ref_table() const { return null_ref_table; }
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg,
+            item_walk_flags flags) override
   {
-    return (*ref)->walk(processor, walk_subquery, arg) ||
+    if (flags & WALK_NO_REF)
+      return (this->*processor)(arg);
+    return (*ref)->walk(processor, arg, flags) ||
            (this->*processor)(arg);
   }
   bool view_used_tables_processor(void *arg) override
@@ -6535,6 +6703,7 @@ public:
       view_arg->view_used_tables|= (*ref)->used_tables();
     return 0;
   }
+  bool ora_join_processor(void *arg) override;
   bool excl_dep_on_table(table_map tab_map) override;
   bool excl_dep_on_grouping_fields(st_select_lex *sel) override;
   bool excl_dep_on_in_subq_left_part(Item_in_subselect *subq_pred) override;
@@ -6681,6 +6850,7 @@ public:
     return 0;
   }
   void print(String *str, enum_query_type query_type) override;
+  bool add_maybe_null_after_ora_join_processor(void *arg) override;
 };
 
 
@@ -6932,9 +7102,10 @@ public:
   double val_real() override = 0;
   longlong val_int() override = 0;
   int save_in_field(Field *field, bool no_conversions) override = 0;
-  bool walk(Item_processor processor, bool walk_subquery, void *args) override
+  bool walk(Item_processor processor, void *args,
+            item_walk_flags flags) override
   {
-    return (item->walk(processor, walk_subquery, args)) ||
+    return (item->walk(processor, args, flags)) ||
       (this->*processor)(args);
   }
 };
@@ -7232,9 +7403,10 @@ public:
   bool check_func_default_processor(void *) override { return true; }
   bool update_func_default_processor(void *arg) override;
   bool register_field_in_read_map(void *arg) override;
-  bool walk(Item_processor processor, bool walk_subquery, void *args) override
+  bool walk(Item_processor processor, void *args,
+            item_walk_flags flags) override
   {
-    return (arg && arg->walk(processor, walk_subquery, args)) ||
+    return (arg && arg->walk(processor, args, flags)) ||
       (this->*processor)(args);
   }
   Item *transform(THD *thd, Item_transformer transformer, uchar *args)
@@ -7243,6 +7415,10 @@ public:
   { return NULL; }
   Item *derived_field_transformer_for_where(THD *thd, uchar *arg) override
   { return NULL; }
+  /*
+    Note that grouping_field_transformer_for_where() is not implemented for
+    some reason.
+  */
   Field *create_tmp_field_ex(MEM_ROOT *root, TABLE *table, Tmp_field_src *src,
                              const Tmp_field_param *param) override;
 
@@ -7367,9 +7543,9 @@ protected:
 
 
 /**
-  This class is used as bulk parameter INGNORE representation.
+  This class is used as bulk parameter IGNORE representation.
 
-  It just do nothing when assigned to a field
+  It just does nothing when assigned to a field
 
   This is a non-standard MariaDB extension.
 */
@@ -7440,9 +7616,10 @@ public:
 
   Item_field *field_for_view_update() override { return nullptr; }
 
-  bool walk(Item_processor processor, bool walk_subquery, void *args) override
+  bool walk(Item_processor processor, void *args,
+            item_walk_flags flags) override
   {
-    return arg->walk(processor, walk_subquery, args) ||
+    return arg->walk(processor, args, flags) ||
 	    (this->*processor)(args);
   }
   bool check_partition_func_processor(void *) override { return true; }
@@ -7515,7 +7692,7 @@ private:
   privilege_t want_privilege;
 public:
 
-Item_trigger_field(THD *thd, Name_resolution_context *context_arg,
+  Item_trigger_field(THD *thd, Name_resolution_context *context_arg,
                      row_version_type row_ver_arg,
                      const LEX_CSTRING &field_name_arg,
                      privilege_t priv, const bool ro)
@@ -7546,6 +7723,7 @@ private:
   void set_required_privilege(bool rw) override;
   bool set_value(THD *thd, sp_rcontext *ctx, Item **it) override;
 
+  void check_new_old_qulifiers_comform_with_trg_event(THD *thd);
 public:
   Settable_routine_parameter *get_settable_routine_parameter() override
   {
@@ -7560,6 +7738,38 @@ public:
 public:
   bool unknown_splocal_processor(void *) override { return false; }
   bool check_vcol_func_processor(void *arg) override;
+
+  int save_in_field(Field *to, bool no_conversions) override;
+  double val_real() override;
+  longlong val_int() override;
+  bool val_bool() override;
+  my_decimal *val_decimal(my_decimal *) override;
+  String *val_str(String*) override;
+};
+
+
+/**
+  This item is instantiated in case one of the clauses
+    INSERTING, UPDATING, DELETING
+  encountered in trigger's body. The method val_bool() of this class returns
+  true if currently running DML statement matches the type of DML
+  activity (insert, update, delete) describing by the one of the clauses
+  INSERTING, UPDATING, DELETING
+*/
+
+class Item_trigger_type_of_statement : public Item_int
+{
+public:
+  Item_trigger_type_of_statement(THD *thd,
+                                 active_dml_stmt stmt_type)
+  : Item_int(thd, 0), m_thd{thd}, m_trigger_stmt_type{stmt_type}
+  {}
+
+  bool val_bool() override;
+
+private:
+  THD *m_thd;
+  active_dml_stmt m_trigger_stmt_type;
 };
 
 
@@ -7729,11 +7939,12 @@ public:
     return example->is_expensive_processor(arg);
   }
   virtual void set_null();
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg,
+            item_walk_flags flags) override
   {
-    if (arg == STOP_PTR)
+    if (flags & WALK_NO_CACHE_PROCESS)
       return FALSE;
-    if (example && example->walk(processor, walk_subquery, arg))
+    if (example && example->walk(processor, arg, flags))
       return TRUE;
     return (this->*processor)(arg);
   }
@@ -8411,7 +8622,7 @@ public:
 
   The value meaning a not-initialized ESCAPE character must not be equal to
   any valid value, so must be outside of these ranges:
-  - -128..+127, not to conflict with a valid 8bit charcter
+  - -128..+127, not to conflict with a valid 8bit character
   - 0..0x10FFFF, not to conflict with a valid Unicode code point
   The exact value does not matter.
 */
@@ -8488,9 +8699,12 @@ public:
   { m_item->update_used_tables(); }
   bool const_item() const override { return m_item->const_item(); }
   table_map not_null_tables() const override { return m_item->not_null_tables(); }
-  bool walk(Item_processor processor, bool walk_subquery, void *arg) override
+  bool walk(Item_processor processor, void *arg,
+            item_walk_flags flags) override
   {
-    return m_item->walk(processor, walk_subquery, arg) ||
+    if (flags & WALK_NO_REF)
+      return (this->*processor)(arg);
+    return m_item->walk(processor, arg, flags) ||
       (this->*processor)(arg);
   }
   bool enumerate_field_refs_processor(void *arg) override
@@ -8526,7 +8740,11 @@ public:
   bool excl_dep_on_grouping_fields(st_select_lex *sel) override
   { return m_item->excl_dep_on_grouping_fields(sel); }
   bool is_expensive() override { return m_item->is_expensive(); }
-  void set_item(Item *item) { m_item= item; }
+  void set_item(Item *item)
+  {
+    m_item= item;
+    ref= &m_item;
+  }
   Item *deep_copy(THD *thd) const override
   {
     Item *clone_item= m_item->deep_copy_with_checks(thd);
@@ -8578,7 +8796,8 @@ inline void TABLE::mark_virtual_column_deps(Field *field)
 {
   DBUG_ASSERT(field->vcol_info);
   DBUG_ASSERT(field->vcol_info->expr);
-  field->vcol_info->expr->walk(&Item::register_field_in_read_map, 1, 0);
+  field->vcol_info->expr->walk(&Item::register_field_in_read_map,
+                               0, WALK_SUBQUERY);
 }
 
 inline void TABLE::use_all_stored_columns()

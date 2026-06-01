@@ -139,6 +139,6 @@ class __TwigTemplate_94c7a917b1fde28ad894038893ea97a2 extends Template
 
     public function getSourceContext()
     {
-        return new Source("", "scripts.twig", "D:\\xampp4\\phpMyAdmin\\templates\\scripts.twig");
+        return new Source("", "scripts.twig", "D:\\test-public2\\phpMyAdmin\\templates\\scripts.twig");
     }
 }

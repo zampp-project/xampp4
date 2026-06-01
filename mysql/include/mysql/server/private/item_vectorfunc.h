@@ -21,6 +21,7 @@
 #include "item.h"
 #include "lex_string.h"
 #include "item_func.h"
+#include "sql_type_vector.h"
 
 class Item_func_vec_distance: public Item_real_func
 {
@@ -90,10 +91,17 @@ public:
 class Item_func_vec_fromtext: public Item_str_func
 {
   String tmp_js;
+  MEM_ROOT current_mem_root;
+  bool mem_root_inited;
+  json_engine_t je;
 public:
   bool fix_length_and_dec(THD *thd) override;
   Item_func_vec_fromtext(THD *thd, Item *a);
   String *val_str(String *buf) override;
+  const Type_handler *type_handler() const override
+  { return &type_handler_vector; }
+  Field *create_field_for_create_select(MEM_ROOT *root, TABLE *table) override
+  { return create_table_field_from_handler(root, table); }
   LEX_CSTRING func_name_cstring() const override
   {
     static LEX_CSTRING name= { STRING_WITH_LEN("VEC_FromText") };
@@ -101,5 +109,11 @@ public:
   }
   Item *shallow_copy(THD *thd) const override
   { return get_item_copy<Item_func_vec_fromtext>(thd, this); }
+   void cleanup() override
+  {
+    if (mem_root_inited)
+      free_root(&current_mem_root, MYF(0));
+    Item_str_func::cleanup();
+  }
 };
 #endif

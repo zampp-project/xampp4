@@ -140,7 +140,7 @@ static inline int ha_compare_char_varying(CHARSET_INFO *charset_info,
                                                          b, b_length);
   return charset_info->coll->strnncoll(charset_info,
                                        a, a_length,
-                                       b, b_length, TRUE/*prefix*/);
+                                       b, b_length, &b_is_prefix);
 }
 
 
@@ -190,7 +190,7 @@ static inline int ha_compare_char_fixed(CHARSET_INFO *charset_info,
          MY_STRNNCOLLSP_NCHARS_EMULATE_TRIMMED_TRAILING_SPACES);
   return charset_info->coll->strnncoll(charset_info,
                                        a, a_length,
-                                       b, b_length, TRUE/*prefix*/);
+                                       b, b_length, &b_is_prefix);
 }
 
 
@@ -218,10 +218,11 @@ static inline int ha_compare_word_prefix(CHARSET_INFO *charset_info,
                                         const uchar *a, size_t a_length,
                                         const uchar *b, size_t b_length)
 {
+  my_bool b_is_prefix;
   return charset_info->coll->strnncoll(charset_info,
                                        a, a_length,
                                        b, b_length,
-                                       TRUE/*b_is_prefix*/);
+                                       &b_is_prefix);
 }
 
 
@@ -263,7 +264,7 @@ extern HA_KEYSEG *ha_find_null(HA_KEYSEG *keyseg, const uchar *a);
                  returned to the SQL layer.
   2=CHECK_OUT_OF_RANGE - the index tuple is outside of the range that we're
                  scanning. (Example: if we're scanning "t.key BETWEEN 10 AND
-                 20" and got a "t.key=21" tuple) Tthe engine should stop
+                 20" and got a "t.key=21" tuple, the engine should stop
                  scanning and return HA_ERR_END_OF_FILE right away).
   3=CHECK_ABORTED_BY_USER - the engine must stop scanning and should return
                             HA_ERR_ABORTED_BY_USER right away

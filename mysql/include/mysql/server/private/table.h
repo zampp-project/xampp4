@@ -84,6 +84,8 @@ class Table_function_json_table;
 class Open_table_context;
 class MYSQL_LOG;
 struct rpl_group_info;
+class Opt_hints_qb;
+class Opt_hints_table;
 
 /*
   Used to identify NESTED_JOIN structures within a join (applicable only to
@@ -93,6 +95,7 @@ struct rpl_group_info;
 typedef ulonglong nested_join_map;
 
 #define VIEW_MD5_LEN 32
+#define MD5_BUFF_LENGTH (VIEW_MD5_LEN + 1) /* hex digest + NUL */
 
 
 #define tmp_file_prefix "#sql"			/**< Prefix for tmp tables */
@@ -102,6 +105,21 @@ typedef ulonglong nested_join_map;
 
 #define HLINDEX_TEMPLATE "#i#%02u"
 #define HLINDEX_BUF_LEN  16 /* with extension .ibd/.MYI/etc and safety margin */
+
+/*
+  to satisfy marked_for_write_or_computed() Field's assert we temporarily
+  mark field for write before storing the generated value in it
+*/
+#ifdef DBUG_ASSERT_EXISTS
+#define DBUG_FIX_WRITE_SET(f, write_set)                                      \
+  bool _write_set_fixed= !bitmap_fast_test_and_set(write_set, (f)->field_index)
+#define DBUG_RESTORE_WRITE_SET(f, write_set)                                  \
+  if (_write_set_fixed)                                                       \
+  bitmap_clear_bit(write_set, (f)->field_index)
+#else
+#define DBUG_FIX_WRITE_SET(f, write_set)
+#define DBUG_RESTORE_WRITE_SET(f, write_set)
+#endif
 
 /**
   Enumerate possible types of a table from re-execution
@@ -237,6 +255,7 @@ private:
 /* Order clause list element */
 
 typedef int (*fast_field_copier)(Field *to, Field *from);
+class Item_window_func;
 
 
 typedef struct st_order {
@@ -265,6 +284,7 @@ typedef struct st_order {
   char	 *buff;				/* If tmp-table group */
   table_map used; /* NOTE: the below is only set to 0 but is still used by eq_ref_table */
   table_map depend_map;
+  List<Item_window_func> window_funcs;
 } ORDER;
 
 /**
@@ -739,7 +759,11 @@ struct TABLE_SHARE
   LEX_CUSTRING tabledef_version;
 
   engine_option_value *option_list;     /* text options for table */
-  ha_table_option_struct *option_struct; /* structure with parsed options */
+  /*
+    Structure with parsed options. Table-wide, engines should use
+    handler::option_struct, otherwise they won't see per-partition options.
+  */
+  ha_table_option_struct *option_struct_table;
 
   /* The following is copied to each TABLE on OPEN */
   Field **field;
@@ -770,7 +794,7 @@ struct TABLE_SHARE
   LEX_CSTRING comment;			/* Comment about table */
   CHARSET_INFO *table_charset;		/* Default charset of string fields */
 
-  MY_BITMAP *check_set;                 /* Fields used by check constrant */
+  MY_BITMAP *check_set;                 /* Fields used by check constraint */
   MY_BITMAP all_set;
   /*
     Key which is used for looking-up table in table cache and in the list
@@ -787,7 +811,6 @@ struct TABLE_SHARE
   Lex_ident_table table_name;            /* Table name (for open) */
   LEX_CSTRING path;                	/* Path to .frm file (from datadir) */
   LEX_CSTRING normalized_path;		/* unpack_filename(path) */
-  LEX_CSTRING connect_string;
 
   /* 
      Set of keys in use, implemented as a Bitmap.
@@ -846,6 +869,16 @@ struct TABLE_SHARE
 
   uint default_expressions;
   uint table_check_constraints, field_check_constraints;
+  /*
+    This is set for all normal tables and for temporary tables that have
+    the CREATE TABLE statement binary logged.
+
+    0 table is not in the binary log (not logged temporary table)
+    1 table create was logged (normal table or logged temp table)
+    2 table create was logged but not all changes are in the binary log.
+      ROW LOGGING will be used for the table.
+  */
+  uint table_creation_was_logged;
 
   uint rec_buff_length;                 /* Size of table->record[] buffer */
   uint keys;                            /* Number of KEY's for the engine */
@@ -898,8 +931,7 @@ struct TABLE_SHARE
   bool crashed;
   bool is_view;
   bool can_cmp_whole_record;
-  /* This is set for temporary tables where CREATE was binary logged */
-  bool table_creation_was_logged;
+  bool binlog_not_up_to_date;
   bool non_determinstic_insert;
   bool has_update_default_function;
   bool can_do_row_logging;              /* 1 if table supports RBR */
@@ -1239,6 +1271,11 @@ struct TABLE_SHARE
   void update_optimizer_costs(handlerton *hton);
   void update_engine_independent_stats(TABLE_STATISTICS_CB *stat);
   bool histograms_exists();
+  /* True if changes for the table should be logged to binary log */
+  bool using_binlog()
+  {
+    return table_creation_was_logged == 1;
+  }
 };
 
 /* not NULL, but cannot be dereferenced */
@@ -1275,7 +1312,7 @@ public:
     truncated_value= false;
   }
   /**
-     Fuction creates duplicate of 'from'
+     Function creates duplicate of 'from'
      string in 'storage' MEM_ROOT.
 
      @param from           string to copy
@@ -1361,6 +1398,8 @@ public:
   key_map keys_in_use_for_group_by;
   /* Map of keys that can be used to calculate ORDER BY without sorting */
   key_map keys_in_use_for_order_by;
+  /* Map of keys that can be used to build ROWID filters */
+  key_map keys_in_use_for_rowid_filter;
   /* Map of keys dependent on some constraint */
   key_map constraint_dependent_keys;
   KEY  *key_info;			/* data of keys in database */
@@ -1492,7 +1531,7 @@ public:
        select max(col1), col2 from t1. In this case, the query produces
        one row with all columns having NULL values.
 
-    Interpetation: If maybe_null!=0, all fields of the table are considered
+    Interpretation: If maybe_null!=0, all fields of the table are considered
     NULLable (and have NULL values when null_row=true)
   */
   uint maybe_null;
@@ -1548,13 +1587,15 @@ public:
 
   /**
     Flag set when the statement contains FORCE INDEX FOR ORDER BY
-    See TABLE_LIST::process_index_hints().
+    See TABLE_LIST::process_index_hints(),
+    Opt_hints_table::update_index_hint_maps()
   */
   bool force_index_order;
 
   /**
     Flag set when the statement contains FORCE INDEX FOR GROUP BY
-    See TABLE_LIST::process_index_hints().
+    See TABLE_LIST::process_index_hints(),
+    Opt_hints_table::update_index_hint_maps()
   */
   bool force_index_group;
   /*
@@ -1694,7 +1735,7 @@ public:
   {
     read_set= read_set_arg;
     if (file)
-      file->column_bitmaps_signal();
+      file->column_bitmaps_signal(false);
   }
   inline void column_bitmaps_set(MY_BITMAP *read_set_arg,
                                  MY_BITMAP *write_set_arg)
@@ -1702,7 +1743,7 @@ public:
     read_set= read_set_arg;
     write_set= write_set_arg;
     if (file)
-      file->column_bitmaps_signal();
+      file->column_bitmaps_signal(false);
   }
   inline void column_bitmaps_set_no_signal(MY_BITMAP *read_set_arg,
                                            MY_BITMAP *write_set_arg)
@@ -1974,20 +2015,9 @@ public:
     return key_info[index].index_flags & HA_CLUSTERED_INDEX;
   }
 
-  /*
-    Return true if we can use rowid filter with this index
-    rowid filter can be used if
-    - filter pushdown is supported by the engine for the index. If this is set then
-      file->ha_table_flags() should not contain HA_NON_COMPARABLE_ROWID!
-    - The index is not a clustered primary index
-  */
+  bool rowid_filter_can_be_applied_to_key(uint index) const;
 
-  inline bool can_use_rowid_filter(uint index) const
-  {
-    return ((key_info[index].index_flags &
-             (HA_DO_RANGE_FILTER_PUSHDOWN | HA_CLUSTERED_INDEX)) ==
-            HA_DO_RANGE_FILTER_PUSHDOWN);
-  }
+  bool key_can_be_used_as_rowid_filter(THD *thd, uint index) const;
 
   ulonglong vers_start_id(const uchar *ptr) const;
   ulonglong vers_end_id(const uchar *ptr) const;
@@ -2015,6 +2045,17 @@ public:
   void vers_fix_old_timestamp(rpl_group_info *rgi);
 #endif
   void find_constraint_correlated_indexes();
+
+  /* Mark that table is not up to date in binary log */
+  void mark_as_not_binlogged()
+  {
+    if (s->tmp_table && s->table_creation_was_logged == 1 &&
+        file->mark_trx_read_write_done)
+    {
+      /* Do not log anything more to binlog for this table */
+      s->table_creation_was_logged= 2;
+    }
+  }
 
 /** Number of additional fields used in versioned tables */
 #define VERSIONING_FIELDS 2
@@ -2601,6 +2642,7 @@ struct TABLE_LIST
   Item_in_subselect  *jtbm_subselect;
   /* TODO: check if this can be joined with tablenr_exec */
   uint jtbm_table_no;
+  uint ora_join_table_no;
 
   SJ_MATERIALIZATION_INFO *sj_mat_info;
 
@@ -2697,7 +2739,7 @@ struct TABLE_LIST
      
      For the @c TABLE_LIST representing the derived table @c b, @c derived
      points to the SELECT_LEX_UNIT representing the result of the query within
-     parenteses.
+     parentheses.
      
      - Views. This is set for views with @verbatim ALGORITHM = TEMPTABLE
      @endverbatim by mysql_make_view().
@@ -2803,6 +2845,7 @@ struct TABLE_LIST
   ulonglong	file_version;		/* version of file's field set */
   ulonglong	mariadb_version;	/* version of server on creation */
   ulonglong     updatable_view;         /* VIEW can be updated */
+  LEX_CSTRING m_sql_path;   /* The session PATH on creation */
   /** 
       @brief The declared algorithm, if this is a view.
       @details One of
@@ -2855,7 +2898,7 @@ struct TABLE_LIST
   bool          updating;               /* for replicate-do/ignore table */
   bool          ignore_leaves;          /* preload only non-leaf nodes */
   bool          crashed;                /* Table was found crashed */
-  bool          skip_locked;            /* Skip locked in view defination */
+  bool          skip_locked;            /* Skip locked in view definition */
   table_map     dep_tables;             /* tables the table depends on      */
   table_map     on_expr_dep_tables;     /* tables on expression depends on  */
   struct st_nested_join *nested_join;   /* if the element is a nested join  */
@@ -2976,6 +3019,11 @@ struct TABLE_LIST
   /* I_S: Flags to open_table (e.g. OPEN_TABLE_ONLY or OPEN_VIEW_ONLY) */
   uint i_s_requested_object;
 
+  /*
+    The [NO_]SPLIT_MATERIALIZED hint will not override this because
+    this is in place for correctness (see Item_func_set_user_var::fix_fields
+    for the rationale).
+  */
   bool prohibit_cond_pushdown;
 
   /*
@@ -2999,6 +3047,12 @@ struct TABLE_LIST
   List<String> *partition_names;
 #endif /* WITH_PARTITION_STORAGE_ENGINE */
 
+  /** Table level optimizer hints for this table.  */
+  Opt_hints_table *opt_hints_table;
+  /* Hints for query block of this table. */
+  Opt_hints_qb *opt_hints_qb;
+
+  /* buffer must be at least MD5_BUFF_LENGTH bytes long */
   void calc_md5(char *buffer);
   int view_check_option(THD *thd, bool ignore_failure);
   bool create_field_translation(THD *thd);
@@ -3450,6 +3504,10 @@ typedef struct st_nested_join
   table_map         sj_corr_tables;
   table_map         direct_children_map;
   List<Item_ptr>    sj_outer_expr_list;
+
+  /// Bitmap of which strategies are enabled for this semi-join nest
+  uint sj_enabled_strategies;
+
   /**
      True if this join nest node is completely covered by the query execution
      plan. This means two things.
@@ -3616,12 +3674,14 @@ extern Lex_ident_table MYSQL_PROC_NAME;
 
 inline bool is_infoschema_db(const LEX_CSTRING *name)
 {
-  return INFORMATION_SCHEMA_NAME.streq(*name);
+  DBUG_ASSERT(name->str || !name->length);
+  return name->length && INFORMATION_SCHEMA_NAME.streq(*name);
 }
 
 inline bool is_perfschema_db(const LEX_CSTRING *name)
 {
-  return PERFORMANCE_SCHEMA_DB_NAME.streq(*name);
+  DBUG_ASSERT(name->str || !name->length);
+  return name->length && PERFORMANCE_SCHEMA_DB_NAME.streq(*name);
 }
 
 inline void mark_as_null_row(TABLE *table)
@@ -3745,7 +3805,7 @@ public:
    */
   enum_tx_isolation iso_level() const;
   /**
-     Stores transactioin isolation level to internal TABLE object.
+     Stores transaction isolation level to internal TABLE object.
    */
   void store_iso_level(enum_tx_isolation iso_level)
   {

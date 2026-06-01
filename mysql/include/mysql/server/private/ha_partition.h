@@ -308,7 +308,6 @@ private:
   handler **m_new_file;                 // Array of references to new handlers
   handler **m_reorged_file;             // Reorganised partitions
   handler **m_added_file;               // Added parts kept for errors
-  LEX_CSTRING *m_connect_string;
   partition_info *m_part_info;          // local reference to partition
   Field **m_part_field_array;           // Part field array locally to save acc
   uchar *m_ordered_rec_buffer;          // Row and key buffer for ord. idx scan
@@ -366,15 +365,37 @@ private:
   uint m_ref_length;                     // Length of position in this
                                          // handler object
   key_range m_start_key;                 // index read key range
+  uint m_unordered_prefix_len;           // key prefix length for
+                                         // unordered scan
+  /*
+    When doing an "unordered" (i.e. no priority queue) index scan,
+    whether to do it in the reverse direction, i.e. starting from the
+    highest (resp. lowest) partition when scanning for the next (resp.
+    previous) record. It is typically determined by index direction of
+    the relevant partition fields, with one exception: it is always
+    false when there is only one partition to scan.
+  */
+  bool m_unordered_reverse_scan;
   enum partition_index_scan_type m_index_scan_type;// What type of index
                                                    // scan
   uint m_top_entry;                      // Which partition is to
                                          // deliver next result
   uint m_rec_length;                     // Local copy of record length
 
-  bool m_ordered;                        // Ordered/Unordered index scan
+  /*
+    If true, this is an index scan and the outputs should be produced
+    in index order. See also m_ordered_scan_ongoing.
+  */
+  bool m_ordered;
   bool m_create_handler;                 // Handler used to create table
   bool m_is_sub_partitioned;             // Is subpartitioned
+
+  /*
+    TRUE means current index scan is using priority queue to merge
+    ordered scans from partitions to produce output in index order.
+    (We do this when m_ordered=true. In some cases, we can skip using
+    the priority queue.)
+  */
   bool m_ordered_scan_ongoing;
   bool m_rnd_init_and_first;
   bool m_ft_init_and_first;
@@ -459,6 +480,16 @@ private:
   /** This is one of the m_file-s that it guaranteed to be opened. */
   /**  It is set in open_read_partitions() */
   handler *m_file_sample;
+
+  enum partition_index_scan_method : unsigned int
+  {
+    INDEX_SCAN_NONE= 0,
+    INDEX_SCAN_ORDERED= 1,
+    INDEX_SCAN_UNORDERED= 2,
+    INDEX_SCAN_BOTH= 3,
+  };
+  enum partition_index_scan_method m_pi_scan_method;
+  bool can_skip_merging_scans();
 public:
   handler **get_child_handlers()
   {
@@ -569,13 +600,13 @@ public:
     m_file[part_id]->update_create_info(create_info);
   }
 
-  void column_bitmaps_signal() override
+  void column_bitmaps_signal(bool mark_for_update) override
   {
     for (uint i= bitmap_get_first_set(&m_opened_partitions);
         i < m_tot_parts;
         i= bitmap_get_next_set(&m_opened_partitions, i))
     {
-      m_file[i]->column_bitmaps_signal();
+      m_file[i]->column_bitmaps_signal(mark_for_update);
     }
   }
 
@@ -609,7 +640,6 @@ private:
                                  const char *partition_name_with_path,
                                  HA_CREATE_INFO *info,
                                  partition_element *p_elem);
-  partition_element *find_partition_element(uint part_id);
   bool insert_partition_name_in_hash(const char *name, uint part_id,
                                      bool is_subpart);
   bool populate_partition_name_hash();
@@ -862,7 +892,8 @@ public:
                        const key_range * end_key,
                        bool eq_range, bool sorted) override;
   int read_range_next() override;
-
+  void set_end_range(const key_range *end_key,
+                     enum_range_scan_direction direction) override;
 
   HANDLER_BUFFER *m_mrr_buffer;
   uint *m_mrr_buffer_size;
@@ -948,7 +979,8 @@ private:
   bool check_parallel_search();
   int handle_pre_scan(bool reverse_order, bool use_parallel);
   int handle_unordered_next(uchar * buf, bool next_same);
-  int handle_unordered_scan_next_partition(uchar * buf);
+  int handle_unordered_prev(uchar * buf);
+  int handle_unordered_scan_next_partition(uchar * buf, bool reverse_order);
   int handle_ordered_index_scan(uchar * buf, bool reverse_order);
   int handle_ordered_index_scan_key_not_found();
   int handle_ordered_next(uchar * buf, bool next_same);
@@ -1073,7 +1105,7 @@ public:
   ha_rows records() override;
 
   /* Calculate hash value for PARTITION BY KEY tables. */
-  static uint32 calculate_key_hash_value(Field **field_array);
+  static uint64 calculate_key_hash_value(Field **field_array);
 
   /*
     -------------------------------------------------------------------------
@@ -1625,6 +1657,10 @@ public:
   }
 
   bool partition_engine() override { return 1;}
+  uint partition_index_scan_method() override
+  {
+    return (uint) m_pi_scan_method;
+  }
 
   /**
      Get the number of records in part_elem and its subpartitions, if any.

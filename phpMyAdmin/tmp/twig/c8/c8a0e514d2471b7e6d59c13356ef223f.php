@@ -73,6 +73,6 @@ class __TwigTemplate_49a2149d1b878db5a2ab9a3e9cbe62d5 extends Template
 
     public function getSourceContext()
     {
-        return new Source("", "message.twig", "D:\\xampp4\\phpMyAdmin\\templates\\message.twig");
+        return new Source("", "message.twig", "D:\\test-public2\\phpMyAdmin\\templates\\message.twig");
     }
 }

@@ -430,6 +430,11 @@ typedef struct dav_locktoken dav_locktoken;
 DAV_DECLARE(dav_error *) dav_get_resource(request_rec *r, int label_allowed,
                                           int use_checked_in, dav_resource **res_p);
 
+/*
+** If DavBasePath is configured for the request location, return the
+** configured path, otherwise NULL.
+*/
+DAV_DECLARE(const char *) dav_get_base_path(request_rec *r);
 
 /* --------------------------------------------------------------------
 **
@@ -1823,6 +1828,7 @@ typedef struct
 #define DAV_WALKTYPE_AUTH       0x0001  /* limit to authorized files */
 #define DAV_WALKTYPE_NORMAL     0x0002  /* walk normal files */
 #define DAV_WALKTYPE_LOCKNULL   0x0004  /* walk locknull resources */
+#define DAV_WALKTYPE_TOLERANT   0x0008  /* tolerate non-fatal errors */
 
     /* callback function and a client context for the walk */
     dav_error * (*func)(dav_walk_resource *wres, int calltype);

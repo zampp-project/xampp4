@@ -180,7 +180,7 @@ public:
     * lock_partitions  - partitions that must be locked (read or write).
     Usually read_partitions is the same set as lock_partitions, but
     in case of UPDATE the WHERE clause can limit the read_partitions set,
-    but not neccesarily the lock_partitions set.
+    but not necessarily the lock_partitions set.
     Usage pattern:
     * Initialized in ha_partition::open().
     * read+lock_partitions is set  according to explicit PARTITION,
@@ -279,7 +279,12 @@ public:
     {
       KEY_ALGORITHM_NONE= 0,
       KEY_ALGORITHM_51= 1,
-      KEY_ALGORITHM_55= 2
+      KEY_ALGORITHM_55= 2,
+      KEY_ALGORITHM_BASE31,
+      KEY_ALGORITHM_CRC32C,
+      KEY_ALGORITHM_XXH32,
+      KEY_ALGORITHM_XXH3,
+      KEY_ALGORITHM_END
     };
   enum_key_algorithm key_algorithm;
 
@@ -395,6 +400,7 @@ public:
   void report_part_expr_error(bool use_subpart_expr);
   bool has_same_partitioning(partition_info *new_part_info);
   bool error_if_requires_values() const;
+  bool set_key_algorithm(const LEX_CSTRING *str);
 private:
   bool set_up_default_partitions(THD *thd, handler *file, HA_CREATE_INFO *info,
                                  uint start_no);
@@ -574,5 +580,28 @@ uint partition_info::next_part_no(uint new_parts) const
   return suffix - new_parts;
 }
 #endif
+
+
+class partition_element_iterator
+{
+  static List<partition_element> empty;
+  List_iterator_fast<partition_element> part_it, subpart_it;
+  public:
+  partition_element_iterator(List<partition_element> &partitions) :
+    part_it(partitions), subpart_it(empty) {}
+  partition_element *operator++(int)
+  {
+    partition_element *sub= subpart_it++;
+    if (sub)
+      return sub;
+    partition_element *part= part_it++;
+    if (!part)
+      return NULL;
+    subpart_it.init(part->subpartitions);
+    sub= subpart_it++;
+    return sub ? sub : part;
+  }
+};
+
 
 #endif /* PARTITION_INFO_INCLUDED */

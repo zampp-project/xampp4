@@ -98,7 +98,7 @@ extern MYSQL_PLUGIN_IMPORT CHARSET_INFO *national_charset_info;
 extern MYSQL_PLUGIN_IMPORT CHARSET_INFO *table_alias_charset;
 
 /**
-  Character set of the buildin error messages loaded from errmsg.sys.
+  Character set of the builtin error messages loaded from errmsg.sys.
 */
 extern CHARSET_INFO *error_message_charset_info;
 
@@ -109,6 +109,9 @@ uint temp_pool_set_next();
 
 extern bool opt_large_files;
 extern bool opt_bin_log, opt_error_log, opt_bin_log_compress;
+extern char *opt_binlog_storage_engine;
+extern const char *opt_binlog_directory;
+extern handlerton *opt_binlog_engine_hton;
 extern uint opt_bin_log_compress_min_len;
 extern my_bool opt_log, opt_bootstrap;
 extern my_bool opt_support_flashback;
@@ -122,6 +125,7 @@ extern MYSQL_PLUGIN_IMPORT bool volatile abort_loop;
 extern my_bool opt_safe_user_create;
 extern my_bool opt_local_infile, opt_myisam_use_mmap;
 extern my_bool opt_slave_compressed_protocol, use_temp_pool;
+extern my_bool opt_silent_startup;
 extern ulong slave_exec_mode_options, slave_ddl_exec_mode_options;
 extern ulong slave_retried_transactions;
 extern ulong transactions_multi_engine;
@@ -129,7 +133,7 @@ extern ulong rpl_transactions_multi_engine;
 extern ulong transactions_gtid_foreign_engine;
 extern ulong slave_run_triggers_for_rbr;
 extern ulonglong slave_type_conversions_options;
-extern my_bool read_only, opt_readonly;
+extern ulong read_only, opt_readonly;
 extern MYSQL_PLUGIN_IMPORT my_bool lower_case_file_system;
 extern my_bool opt_enable_named_pipe, opt_sync_frm, opt_allow_suspicious_udfs;
 extern my_bool opt_secure_auth;
@@ -244,6 +248,7 @@ extern ulonglong slave_max_statement_time;
 extern double slave_max_statement_time_double;
 extern double slave_abort_blocking_timeout;
 extern ulong opt_binlog_rows_event_max_size;
+extern uint opt_binlog_row_event_fragment_threshold;
 extern ulong binlog_row_metadata;
 extern my_bool opt_binlog_gtid_index;
 extern uint opt_binlog_gtid_index_page_size;
@@ -304,6 +309,9 @@ extern const char *encryption_algorithm_names[];
 extern long opt_secure_timestamp;
 extern uint default_password_lifetime;
 extern my_bool disconnect_on_expired_password;
+#ifndef DBUG_OFF
+extern bool is_in_ddl_recovery;
+#endif
 
 enum secure_timestamp { SECTIME_NO, SECTIME_SUPER, SECTIME_REPL, SECTIME_YES };
 bool is_set_timestamp_forbidden(THD *thd);
@@ -313,7 +321,8 @@ extern PSI_mutex_key key_PAGE_lock, key_LOCK_sync, key_LOCK_active,
        key_LOCK_pool, key_LOCK_pending_checkpoint;
 #endif /* HAVE_MMAP */
 
-extern PSI_mutex_key key_BINLOG_LOCK_index, key_BINLOG_LOCK_xid_list,
+extern PSI_mutex_key key_BINLOG_LOCK_index, key_BINLOG_LOCK_binlog_use,
+  key_BINLOG_LOCK_xid_list,
   key_BINLOG_LOCK_binlog_background_thread,
   key_LOCK_binlog_end_pos,
   key_delayed_insert_mutex, key_hash_filo_lock, key_LOCK_active_mi,
@@ -359,7 +368,7 @@ extern PSI_rwlock_key key_rwlock_LOCK_grant, key_rwlock_LOCK_logger,
 extern PSI_cond_key key_PAGE_cond, key_COND_active, key_COND_pool;
 #endif /* HAVE_MMAP */
 
-extern PSI_cond_key key_BINLOG_COND_xid_list,
+extern PSI_cond_key key_BINLOG_COND_binlog_use, key_BINLOG_COND_xid_list,
   key_BINLOG_COND_binlog_background_thread,
   key_BINLOG_COND_binlog_background_thread_end,
   key_COND_cache_status_changed, key_COND_manager, key_COND_server_started,
@@ -386,7 +395,7 @@ extern PSI_cond_key key_TABLE_SHARE_COND_rotation;
 extern PSI_thread_key key_thread_delayed_insert,
   key_thread_handle_manager, key_thread_main,
   key_thread_one_connection, key_thread_signal_hand,
-  key_thread_slave_background, key_rpl_parallel_thread;
+  key_thread_slave_deadlock_handler, key_rpl_parallel_thread;
 
 extern PSI_file_key key_file_binlog, key_file_binlog_cache,
        key_file_binlog_index, key_file_binlog_index_cache, key_file_casetest,
@@ -498,6 +507,7 @@ extern PSI_memory_key key_memory_Query_cache;
 extern PSI_memory_key key_memory_Table_trigger_dispatcher;
 extern PSI_memory_key key_memory_native_functions;
 extern PSI_memory_key key_memory_WSREP;
+extern PSI_memory_key key_memory_trace_ddl_info;
 
 /*
   MAINTAINER: Please keep this list in order, to limit merge collisions.
@@ -512,6 +522,7 @@ extern PSI_stage_info stage_alter_inplace_prepare;
 extern PSI_stage_info stage_alter_inplace;
 extern PSI_stage_info stage_alter_inplace_commit;
 extern PSI_stage_info stage_after_apply_event;
+extern PSI_stage_info stage_buffer_partial_rows;
 extern PSI_stage_info stage_changing_master;
 extern PSI_stage_info stage_checking_master_version;
 extern PSI_stage_info stage_checking_permissions;
@@ -520,6 +531,7 @@ extern PSI_stage_info stage_checking_query_cache_for_query;
 extern PSI_stage_info stage_cleaning_up;
 extern PSI_stage_info stage_closing_tables;
 extern PSI_stage_info stage_connecting_to_master;
+extern PSI_stage_info stage_constructing_rows_ev;
 extern PSI_stage_info stage_converting_heap_to_myisam;
 extern PSI_stage_info stage_copying_to_group_table;
 extern PSI_stage_info stage_copying_to_tmp_table;
@@ -642,6 +654,7 @@ extern PSI_stage_info stage_slave_background_process_request;
 extern PSI_stage_info stage_slave_background_wait_request;
 extern PSI_stage_info stage_waiting_for_deadlock_kill;
 extern PSI_stage_info stage_starting;
+extern PSI_stage_info stage_waiting_for_reset_master;
 #ifdef WITH_WSREP
 // Additional Galera thread states
 extern PSI_stage_info stage_waiting_isolation;
@@ -685,7 +698,6 @@ extern LEX_CUSTRING ssl_acceptor_fingerprint();
   The following variables were under INNODB_COMPABILITY_HOOKS
  */
 extern my_bool opt_large_pages;
-extern uint opt_large_page_size;
 extern MYSQL_PLUGIN_IMPORT char lc_messages_dir[FN_REFLEN];
 extern char *lc_messages_dir_ptr, *log_error_file_ptr;
 extern MYSQL_PLUGIN_IMPORT char reg_ext[FN_EXTLEN];
@@ -717,7 +729,8 @@ extern mysql_mutex_t
        LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
        LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,
        LOCK_active_mi, LOCK_manager, LOCK_user_conn,
-       LOCK_prepared_stmt_count, LOCK_error_messages,  LOCK_backup_log,
+       LOCK_prepared_stmt_count, LOCK_error_messages,
+       LOCK_slave_deadlock_handler, LOCK_backup_log,
        LOCK_optimizer_costs;
 extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_global_system_variables;
 extern mysql_rwlock_t LOCK_all_status_vars;
@@ -729,10 +742,14 @@ extern mysql_rwlock_t LOCK_ssl_refresh;
 extern mysql_prlock_t LOCK_system_variables_hash;
 extern mysql_cond_t COND_start_thread;
 extern mysql_cond_t COND_manager;
+extern mysql_cond_t COND_slave_deadlock_handler;
 
 extern my_bool opt_use_ssl;
 extern char *opt_ssl_ca, *opt_ssl_capath, *opt_ssl_cert, *opt_ssl_cipher,
   *opt_ssl_key, *opt_ssl_crl, *opt_ssl_crlpath;
+
+extern const char *get_ssl_passphrase();
+
 extern ulonglong tls_version;
 
 #ifdef MYSQL_SERVER
@@ -805,6 +822,7 @@ enum options_mysqld
   OPT_TLS_VERSION, OPT_SECURE_AUTH,
   OPT_MYSQL_TO_BE_IMPLEMENTED,
   OPT_SEQURE_FILE_PRIV,
+  OPT_MASTER_HEARTBEAT_PERIOD,
   OPT_which_is_always_the_last
 };
 #endif
@@ -858,7 +876,7 @@ enum enum_query_type
   QT_SHOW_SELECT_NUMBER= (1<<10),
 
   /// Do not print database name or table name in the identifiers (even if
-  /// this means the printout will be ambigous). It is assumed that the caller
+  /// this means the printout will be ambiguous). It is assumed that the caller
   ///  passing this flag knows what they are doing.
   QT_ITEM_IDENT_DISABLE_DB_TABLE_NAMES= (1 <<11),
 
@@ -877,7 +895,12 @@ enum enum_query_type
   QT_FOR_FRM= (1 << 13),
 
   // Print only the SELECT part, even for INSERT...SELECT
-  QT_SELECT_ONLY = (1 << 14)
+  QT_SELECT_ONLY = (1 << 14),
+  /// Used for printing default stored routine parameter for Information Schema.
+  /// Parameters are considered SP local variables and they're usually printed
+  /// in `var_name`@`var_index` format. Setting this prevents such formatting
+  /// and just prints the `var_name`
+  QT_DEFAULT_PARAM_INFO_SCHEMA = (1 << 15)
 };
 
 

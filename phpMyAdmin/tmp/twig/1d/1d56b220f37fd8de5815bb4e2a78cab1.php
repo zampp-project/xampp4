@@ -94,6 +94,6 @@ class __TwigTemplate_1caf31ed37c1432fd0fe2fe2c4155b57 extends Template
 
     public function getSourceContext()
     {
-        return new Source("", "navigation/tree/state.twig", "D:\\xampp4\\phpMyAdmin\\templates\\navigation\\tree\\state.twig");
+        return new Source("", "navigation/tree/state.twig", "D:\\test-public2\\phpMyAdmin\\templates\\navigation\\tree\\state.twig");
     }
 }

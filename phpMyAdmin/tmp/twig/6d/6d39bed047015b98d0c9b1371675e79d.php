@@ -303,6 +303,6 @@ yield _gettext("Reset");
 
     public function getSourceContext()
     {
-        return new Source("", "config/form_display/display.twig", "D:\\xampp4\\phpMyAdmin\\templates\\config\\form_display\\display.twig");
+        return new Source("", "config/form_display/display.twig", "D:\\test-public2\\phpMyAdmin\\templates\\config\\form_display\\display.twig");
     }
 }

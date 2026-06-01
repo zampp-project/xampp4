@@ -1229,7 +1229,7 @@
  *	This symbol contains the ~name expanded version of ARCHLIB, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-#define ARCHLIB "D:D:\\xampp4\\perl\\lib"		/**/
+#define ARCHLIB "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\lib"		/**/
 /*#define ARCHLIB_EXP ""	/ **/
 
 /* BIN:
@@ -1244,8 +1244,8 @@
  *	This symbol, if defined, indicates that we'd like to relocate entries
  *	in @INC at run time based on the location of the perl binary.
  */
-#define BIN "D:D:\\xampp4\\perl\\bin"	/**/
-#define BIN_EXP "D:D:\\xampp4\\perl\\bin"	/**/
+#define BIN "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\bin"	/**/
+#define BIN_EXP "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\bin"	/**/
 #define PERL_RELOCATABLE_INC "undef"		/**/
 
 /* PERL_INC_VERSION_LIST:
@@ -1283,7 +1283,7 @@
  *	This symbol contains the ~name expanded version of PRIVLIB, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-#define PRIVLIB "D:D:\\xampp4\\perl\\lib"		/**/
+#define PRIVLIB "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\lib"		/**/
 #define PRIVLIB_EXP (PerlEnv_lib_path(PERL_VERSION_STRING, NULL))	/**/
 
 /* SITEARCH:
@@ -1301,7 +1301,7 @@
  *	This symbol contains the ~name expanded version of SITEARCH, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-#define SITEARCH "D:D:\\xampp4\\perl\\site\\lib"		/**/
+#define SITEARCH "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\site\\lib"		/**/
 /*#define SITEARCH_EXP ""	/ **/
 
 /* SITELIB:
@@ -1324,7 +1324,7 @@
  *	removed.  The elements in inc_version_list (inc_version_list.U) can
  *	be tacked onto this variable to generate a list of directories to search.
  */
-#define SITELIB "D:D:\\xampp4\\perl\\site\\lib"		/**/
+#define SITELIB "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\site\\lib"		/**/
 #define SITELIB_EXP (PerlEnv_sitelib_path(PERL_VERSION_STRING, NULL))	/**/
 #define SITELIB_STEM ""		/**/
 
@@ -1343,8 +1343,8 @@
  *	This symbol contains the ~name expanded version of PERL_VENDORARCH, to be used
  *	in programs that are not prepared to deal with ~ expansion at run-time.
  */
-#define PERL_VENDORARCH "D:D:\\xampp4\\perl\\vendor\\lib"		/**/
-#define PERL_VENDORARCH_EXP "D:D:\\xampp4\\perl\\vendor\\lib"		/**/
+#define PERL_VENDORARCH "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\vendor\\lib"		/**/
+#define PERL_VENDORARCH_EXP "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\vendor\\lib"		/**/
 
 /* PERL_VENDORLIB_EXP:
  *	This symbol contains the ~name expanded version of VENDORLIB, to be used
@@ -1355,7 +1355,7 @@
  *	removed.  The elements in inc_version_list (inc_version_list.U) can
  *	be tacked onto this variable to generate a list of directories to search.
  */
-#define PERL_VENDORLIB_EXP "D:D:\\xampp4\\perl\\vendor\\lib"		/**/
+#define PERL_VENDORLIB_EXP "D:D:F:F:\\test-public-modernized-4.0.0-windows4\\perl\\vendor\\lib"		/**/
 #define PERL_VENDORLIB_STEM ""		/**/
 
 /* OSNAME:

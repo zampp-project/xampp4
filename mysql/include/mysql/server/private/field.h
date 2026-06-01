@@ -44,6 +44,7 @@ class Item_bool_func;
 class Item_equal;
 class Virtual_tmp_table;
 class Qualified_column_ident;
+class Qualified_ident;
 class Table_ident;
 class SEL_ARG;
 class RANGE_OPT_PARAM;
@@ -823,6 +824,14 @@ public:
   ha_field_option_struct *option_struct;   /* structure with parsed options */
   /* Field is part of the following keys */
   key_map	key_start, part_of_key, part_of_key_not_clustered;
+  /*
+    If the field is a Virtual Column (vcol), part_of_key contains indexes that
+    contain the field directly and also indexes that contain all fields used
+    in vcol's expression.
+    vcol_direct_part_of_key only contains indexes that contain the field
+    directly.
+  */
+  key_map vcol_direct_part_of_key;
 
   /*
     Bitmap of indexes that have records ordered by col1, ... this_field, ...
@@ -896,7 +905,7 @@ public:
   Column_statistics_collected *collected_stats;
 
   /* 
-    This is additional data provided for any computed(virtual) field,
+    This is additional data provided for any computed (virtual) field,
     default function or check constraint.
     In particular it includes a pointer to the item by which this field
     can be computed from other fields.
@@ -996,6 +1005,36 @@ public:
     reset();
     return 0;
   }
+
+  // Store a reference value (e.g. SYS_REFCURSOR) into the field.
+  virtual int store_ref(const Type_ref_null &ref, bool no_conversions)
+  {
+    return 0;
+  }
+
+  /*
+    expr_event_handler()
+
+    Handle an expression event, such as destruction, for the Field's value.
+    In case of SYS_REFCURSOR, the Field's value stores the offset
+    of the cursor in the array Statement_rcontext::m_statement_cursors.
+
+    Unlike set_null(), expr_event_handler(DESTRUCT*) can have a side effect
+    and can check the previous Field value. For example,
+    if the previous value of a Field_sys_refcursor field was not NULL,
+    Field_sys_refcursor::expr_event_handler(DESTRUCT*) decrements the cursor
+    reference counter and closes the cursor if the counter decremented
+    down to zero.
+
+    expr_event_handler() assumes that the Field is in a deterministic state,
+    e.g. set_null(), which has no side effects, was earlier called.
+
+    For details see the implementation of Field_sys_refcursor
+    in /plugin/type_cursor/.
+  */
+  virtual void expr_event_handler(THD *thd, expr_event_t event)
+  { }
+
   int store_time(const MYSQL_TIME *ltime)
   { return store_time_dec(ltime, TIME_SECOND_PART_DIGITS); }
   int store(const char *to, size_t length, CHARSET_INFO *cs,
@@ -1044,13 +1083,22 @@ public:
   /**
     Mark unused memory in the field as defined. Mainly used to ensure
     that if we write full field to disk (for example in
-    Count_distinct_field::add(), we don't write unitalized data to
+    Count_distinct_field::add(), we don't write uninitialized data to
     disk which would confuse valgrind or MSAN.
   */
   virtual void mark_unused_memory_as_defined() {}
 #else
   void mark_unused_memory_as_defined() {}
 #endif
+
+  /*
+    Get a reference value of the Field.
+    Field_sys_refcursor in plugins/type_cursor overrides this.
+  */
+  virtual Type_ref_null val_ref(THD *thd)
+  {
+    return Type_ref_null(); // Return a NULL reference by default.
+  }
 
   virtual double val_real()=0;
   virtual longlong val_int()=0;
@@ -1560,6 +1608,14 @@ public:
   virtual void sort_string(uchar *buff,uint length)=0;
   virtual bool optimize_range(uint idx, uint part) const;
   virtual void free() {}
+
+  /*
+    Creates a copy of this field which can be added to any table, and the
+    returned field is reset to a state respective of this. That is, any
+    information which is dependent on the original table is dropped (e.g. key
+    info, auto increment, etc). The information that is retained is that which
+    defines how to store, retrieve, or compare the field.
+  */
   virtual Field *make_new_field(MEM_ROOT *root, TABLE *new_table,
                                 bool keep_type);
   virtual Field *new_key_field(MEM_ROOT *root, TABLE *new_table,
@@ -1675,23 +1731,14 @@ public:
   }
   virtual bool send(Protocol *protocol);
 
-  virtual uchar *pack(uchar *to, const uchar *from, uint max_length);
-  /**
-     @overload Field::pack(uchar*, const uchar*, uint, bool)
-  */
-  uchar *pack(uchar *to, const uchar *from)
-  {
-    DBUG_ENTER("Field::pack");
-    uchar *result= this->pack(to, from, UINT_MAX);
-    DBUG_RETURN(result);
-  }
+  virtual uchar *pack(uchar *to, const uchar *from) const;
 
   virtual const uchar *unpack(uchar* to, const uchar *from,
                               const uchar *from_end, uint param_data=0);
 
-  virtual uint packed_col_length(const uchar *to, uint length)
-  { return length;}
-  virtual uint max_packed_col_length(uint max_length)
+  virtual uint packed_col_length() const
+  { return pack_length(); }
+  virtual uint max_packed_col_length(uint max_length) const
   { return max_length;}
   virtual bool is_packable() const { return false; }
 
@@ -1792,7 +1839,7 @@ protected:
   /*
     Make a leaf tree when an INT value was stored into a field of INT type,
     and some truncation happened. Tries to adjust the range search condition
-    when possible, e.g. "tinytint < 300" -> "tinyint <= 127".
+    when possible, e.g. "tinyint < 300" -> "tinyint <= 127".
     Can also return SEL_ARG_IMPOSSIBLE(), and NULL (not sargable).
   */
   SEL_ARG *stored_field_make_mm_leaf_bounded_int(RANGE_OPT_PARAM *param,
@@ -1994,6 +2041,8 @@ public:
   {
     return const_item;
   }
+  virtual Item_field *make_item_field_spvar(THD *thd,
+                                            const Spvar_definition &def);
   virtual Data_type_compatibility can_optimize_keypart_ref(
                                         const Item_bool_func *cond,
                                         const Item *item) const;
@@ -2074,14 +2123,14 @@ private:
   virtual size_t do_last_null_byte() const;
 
 protected:
-  uchar *pack_int(uchar *to, const uchar *from, size_t size)
+  static uchar *pack_int(uchar *to, const uchar *from, size_t size)
   {
     memcpy(to, from, size);
     return to + size;
   }
 
-  const uchar *unpack_int(uchar* to, const uchar *from,
-                          const uchar *from_end, size_t size)
+  static const uchar *unpack_int(uchar* to, const uchar *from,
+                                 const uchar *from_end, size_t size)
   {
     if (from + size > from_end)
       return 0;
@@ -2089,21 +2138,25 @@ protected:
     return from + size;
   }
 
-  uchar *pack_int16(uchar *to, const uchar *from)
+  static uchar *pack_int16(uchar *to, const uchar *from)
   { return pack_int(to, from, 2); }
-  const uchar *unpack_int16(uchar* to, const uchar *from, const uchar *from_end)
+  static const uchar *unpack_int16(uchar* to,
+                                   const uchar *from, const uchar *from_end)
   { return unpack_int(to, from, from_end, 2); }
-  uchar *pack_int24(uchar *to, const uchar *from)
+  static uchar *pack_int24(uchar *to, const uchar *from)
   { return pack_int(to, from, 3); }
-  const uchar *unpack_int24(uchar* to, const uchar *from, const uchar *from_end)
+  static const uchar *unpack_int24(uchar* to,
+                             const uchar *from, const uchar *from_end)
   { return unpack_int(to, from, from_end, 3); }
-  uchar *pack_int32(uchar *to, const uchar *from)
+  static uchar *pack_int32(uchar *to, const uchar *from)
   { return pack_int(to, from, 4); }
-  const uchar *unpack_int32(uchar* to, const uchar *from, const uchar *from_end)
+  static const uchar *unpack_int32(uchar* to,
+                                   const uchar *from, const uchar *from_end)
   { return unpack_int(to, from, from_end, 4); }
-  uchar *pack_int64(uchar* to, const uchar *from)
+  static uchar *pack_int64(uchar* to, const uchar *from)
   { return pack_int(to, from, 8); }
-  const uchar *unpack_int64(uchar* to, const uchar *from,  const uchar *from_end)
+  static const uchar *unpack_int64(uchar* to,
+                                   const uchar *from,  const uchar *from_end)
   { return unpack_int(to, from, from_end, 8); }
 
   double pos_in_interval_val_real(Field *min, Field *max);
@@ -2201,6 +2254,13 @@ public:
   {
     DBUG_ASSERT(Field_num::type() == binlog_type());
     return Binlog_type_info(Field_num::type(), 0, 0, binlog_signedness());
+  }
+  void hash_not_null(Hasher *hasher) override
+  {
+    DBUG_ASSERT(marked_for_read());
+    DBUG_ASSERT(!is_null());
+    DBUG_ASSERT(hasher->m_hash_num);
+    hasher->m_hash_num(hasher, ptr, pack_length());
   }
 };
 
@@ -2335,7 +2395,8 @@ public:
                                     const Relay_log_info *rli,
                                     const Conv_param &param) const override;
   int store_decimal(const my_decimal *d) override;
-  uint32 max_data_length() const override;
+  uint32 max_data_length() const override= 0;
+  uint packed_col_length() const override= 0;
   void make_send_field(Send_field *) override;
   bool send(Protocol *protocol) override;
   bool val_bool() override;
@@ -2459,9 +2520,9 @@ public:
   void overflow(bool negative);
   bool zero_pack() const override { return false; }
   void sql_type(String &str) const override;
-  uchar *pack(uchar* to, const uchar *from, uint max_length) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
-    return Field::pack(to, from, max_length);
+    return Field::pack(to, from);
   }
 };
 
@@ -2676,7 +2737,7 @@ public:
     return type_handler_priv()->type_limits_int();
   }
 
-  uchar *pack(uchar* to, const uchar *from, uint max_length) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
     *to= *from;
     return to + 1;
@@ -2697,7 +2758,7 @@ public:
 };
 
 
-class Field_short final :public Field_int
+class Field_short :public Field_int
 {
   const Type_handler_general_purpose_int *type_handler_priv() const
   {
@@ -2738,7 +2799,7 @@ public:
   {
     return type_handler_priv()->type_limits_int();
   }
-  uchar *pack(uchar* to, const uchar *from, uint) override
+  uchar *pack(uchar* to, const uchar *from) const override
   { return pack_int16(to, from); }
 
   const uchar *unpack(uchar* to, const uchar *from,
@@ -2785,9 +2846,9 @@ public:
   {
     return type_handler_priv()->type_limits_int();
   }
-  uchar *pack(uchar* to, const uchar *from, uint max_length) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
-    return Field::pack(to, from, max_length);
+    return Field::pack(to, from);
   }
   ulonglong get_max_int_value() const override
   {
@@ -2837,7 +2898,7 @@ public:
   {
     return type_handler_priv()->type_limits_int();
   }
-  uchar *pack(uchar* to, const uchar *from, uint) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
     return pack_int32(to, from);
   }
@@ -2898,7 +2959,7 @@ public:
   {
     return type_handler_priv()->type_limits_int();
   }
-  uchar *pack(uchar* to, const uchar *from, uint) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
     return pack_int64(to, from);
   }
@@ -3360,7 +3421,7 @@ public:
   /* Get TIMESTAMP field value as seconds since begging of Unix Epoch */
   my_time_t get_timestamp(const uchar *pos, ulong *sec_part) const override;
   bool val_native(Native *to) override;
-  uchar *pack(uchar *to, const uchar *from, uint) override
+  uchar *pack(uchar *to, const uchar *from) const override
   {
     return pack_int32(to, from);
   }
@@ -3397,8 +3458,8 @@ public:
   }
   decimal_digits_t decimals() const override { return dec; }
   enum ha_base_keytype key_type() const override { return HA_KEYTYPE_BINARY; }
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override
-  { return Field::pack(to, from, max_length); }
+  uchar *pack(uchar *to, const uchar *from) const override
+  { return Field::pack(to, from); }
   const uchar *unpack(uchar* to, const uchar *from, const uchar *from_end,
                       uint param_data) override
   { return Field::unpack(to, from, from_end, param_data); }
@@ -3610,7 +3671,7 @@ public:
   void sort_string(uchar *buff,uint length) override;
   uint32 pack_length() const override { return 4; }
   void sql_type(String &str) const override;
-  uchar *pack(uchar* to, const uchar *from, uint) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
     return pack_int32(to, from);
   }
@@ -3931,7 +3992,7 @@ public:
   uint32 pack_length() const override { return 8; }
   bool get_date(MYSQL_TIME *ltime, date_mode_t fuzzydate) override
   { return Field_datetime0::get_TIME(ltime, ptr, fuzzydate); }
-  uchar *pack(uchar* to, const uchar *from, uint) override
+  uchar *pack(uchar* to, const uchar *from) const override
   {
     return pack_int64(to, from);
   }
@@ -3966,8 +4027,8 @@ public:
   enum ha_base_keytype key_type() const override final { return HA_KEYTYPE_BINARY; }
   void make_send_field(Send_field *field) override final;
   bool send(Protocol *protocol) override final;
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override final
-  { return Field::pack(to, from, max_length); }
+  uchar *pack(uchar *to, const uchar *from) const override final
+  { return Field::pack(to, from); }
   const uchar *unpack(uchar* to, const uchar *from, const uchar *from_end,
                       uint param_data) override final
   { return Field::unpack(to, from, from_end, param_data); }
@@ -4172,7 +4233,7 @@ public:
   void sql_type(String &str) const override;
   void sql_rpl_type(String*) const override;
   bool is_equal(const Column_definition &new_field) const override;
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override;
+  uchar *pack(uchar *to, const uchar *from) const override;
   const uchar *unpack(uchar* to, const uchar *from, const uchar *from_end,
                       uint param_data) override;
   uint pack_length_from_metadata(uint field_metadata) const override
@@ -4185,8 +4246,12 @@ public:
   bool compatible_field_size(uint field_metadata, const Relay_log_info *rli,
                              uint16 mflags, int *order_var) const override;
   uint row_pack_length() const override { return field_length; }
-  uint packed_col_length(const uchar *to, uint length) override;
-  uint max_packed_col_length(uint max_length) override;
+  uint32 max_data_length() const override
+  {
+    return field_length;
+  }
+  uint packed_col_length() const override;
+  uint max_packed_col_length(uint max_length) const override;
   uint size_of() const override { return sizeof *this; }
   bool has_charset() const override { return charset() != &my_charset_bin; }
   Field *make_new_field(MEM_ROOT *root, TABLE *new_table, bool keep_type)
@@ -4219,7 +4284,7 @@ public:
     return length_bytes == 1 ? (uint) *ptr_arg : uint2korr(ptr_arg);
   }
 protected:
-  void store_length(uint32 number)
+  void store_length(uint32 number) const
   {
     if (length_bytes == 1)
       *ptr= (uchar) number;
@@ -4267,6 +4332,10 @@ public:
   uint row_pack_length() const override { return field_length; }
   bool zero_pack() const override { return false; }
   int  reset() override { bzero(ptr,field_length+length_bytes); return 0; }
+  uint32 max_data_length() const override
+  {
+    return field_length + (field_length > 255 ? 2 : 1);
+  }
   uint32 pack_length() const override
   { return (uint32) field_length+length_bytes; }
   uint32 key_length() const override { return (uint32) field_length; }
@@ -4304,15 +4373,15 @@ public:
   void set_key_image(const uchar *buff,uint length) override;
   void sql_type(String &str) const override;
   void sql_rpl_type(String*) const override;
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override;
+  uchar *pack(uchar *to, const uchar *from) const override;
   const uchar *unpack(uchar* to, const uchar *from, const uchar *from_end,
                       uint param_data) override;
   int cmp_binary(const uchar *a,const uchar *b, uint32 max_length=~0U) const
     override;
   int key_cmp(const uchar *,const uchar*) const override;
   int key_cmp(const uchar *str, uint length) const override;
-  uint packed_col_length(const uchar *to, uint length) override;
-  uint max_packed_col_length(uint max_length) override;
+  uint packed_col_length() const override;
+  uint max_packed_col_length(uint max_length) const override;
   uint32 data_length() override;
   uint size_of() const override { return sizeof *this; }
   bool has_charset() const override
@@ -4634,8 +4703,8 @@ public:
     bzero((uchar*) &read_value, sizeof read_value);
   }
   uint32 get_field_buffer_size() { return value.alloced_length(); }
-  void store_length(uchar *i_ptr, uint i_packlength, uint32 i_number);
-  void store_length(size_t number)
+  void store_length(uchar *i_ptr, uint i_packlength, uint32 i_number) const;
+  void store_length(size_t number) const
   {
     DBUG_ASSERT(number < UINT_MAX32);
     store_length(ptr, packlength, (uint32)number);
@@ -4735,11 +4804,11 @@ public:
     /* Set value pointer. Lengths are not important */
     value.reset((char*) data, 1, 1, &my_charset_bin);
   }
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override;
+  uchar *pack(uchar *to, const uchar *from) const override;
   const uchar *unpack(uchar *to, const uchar *from, const uchar *from_end,
                       uint param_data) override;
-  uint packed_col_length(const uchar *col_ptr, uint length) override;
-  uint max_packed_col_length(uint max_length) override;
+  uint packed_col_length() const override;
+  uint max_packed_col_length(uint max_length) const override;
   void free() override
   {
     value.free();
@@ -4930,7 +4999,7 @@ public:
   {
     return Type_extra_attributes(m_typelib);
   }
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override;
+  uchar *pack(uchar *to, const uchar *from) const override;
   const uchar *unpack(uchar *to, const uchar *from, const uchar *from_end,
                       uint param_data) override;
 
@@ -5135,7 +5204,7 @@ public:
   bool compatible_field_size(uint metadata, const Relay_log_info *rli,
                              uint16 mflags, int *order_var) const override;
   void sql_type(String &str) const override;
-  uchar *pack(uchar *to, const uchar *from, uint max_length) override;
+  uchar *pack(uchar *to, const uchar *from) const override;
   const uchar *unpack(uchar *to, const uchar *from,
                       const uchar *from_end, uint param_data) override;
   int set_default() override;
@@ -5262,9 +5331,12 @@ public:
     return m_table;
   }
   Virtual_tmp_table **virtual_tmp_table_addr() override { return &m_table; }
+  Item_field *make_item_field_spvar(THD *thd,
+                                    const Spvar_definition &def) override;
   bool row_create_fields(THD *thd, List<Spvar_definition> *list);
   bool row_create_fields(THD *thd, const Spvar_definition &def);
   bool sp_prepare_and_store_item(THD *thd, Item **value) override;
+  void expr_event_handler(THD *thd, expr_event_t event) override;
 };
 
 
@@ -5390,8 +5462,8 @@ public:
   bool explicitly_nullable;
 
   /*
-    This is additinal data provided for any computed(virtual) field.
-    In particular it includes a pointer to the item by  which this field
+    This is additional data provided for any computed (virtual) field.
+    In particular it includes a pointer to the item by which this field
     can be computed from other fields.
   */
   Virtual_column_info
@@ -5668,6 +5740,7 @@ public:
   bool adjust_formal_params_to_actual_params(THD *thd,
                                              Item **args, uint arg_count);
   bool resolve_type_refs(THD *);
+  Row_definition_list *deep_copy(THD *thd) const;
 };
 
 /**
@@ -5677,6 +5750,7 @@ public:
   - variables with explicit data types:   DECLARE a INT;
   - variables with data type references:  DECLARE a t1.a%TYPE;
   - ROW type variables
+  - Associative arrays
 
   Notes:
   - Scalar variables have m_field_definitions==NULL.
@@ -5711,6 +5785,14 @@ public:
     m_cursor_rowtype_ref(false),
     m_cursor_rowtype_offset(0),
     m_row_field_definitions(NULL)
+  { }
+  Spvar_definition(const Column_definition &col_def)
+   : Column_definition(col_def),
+     m_column_type_ref(NULL),
+     m_table_rowtype_ref(NULL),
+     m_cursor_rowtype_ref(false),
+     m_cursor_rowtype_offset(0),
+     m_row_field_definitions(NULL)
   { }
   const Type_handler *type_handler() const
   {
@@ -5767,7 +5849,8 @@ public:
   }
   uint is_row() const
   {
-    return m_row_field_definitions != NULL;
+    return m_row_field_definitions != NULL &&
+           type_handler() == &type_handler_row;
   }
   // Check if "this" defines a ROW variable with n elements
   uint is_row(uint n) const
@@ -5779,14 +5862,14 @@ public:
   {
     return m_row_field_definitions;
   }
-  void set_row_field_definitions(Row_definition_list *list)
+  void set_row_field_definitions(const Type_handler *th,
+                                 Row_definition_list *list)
   {
     DBUG_ASSERT(list);
-    set_handler(&type_handler_row);
+    set_handler(th);
     m_row_field_definitions= list;
   }
 
-  class Item_field_row *make_item_field_row(THD *thd, Field_row *field);
 };
 
 

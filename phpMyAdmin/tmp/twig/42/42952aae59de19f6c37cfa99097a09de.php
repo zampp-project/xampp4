@@ -83,6 +83,6 @@ yield _gettext("There are no favorite tables.");
 
     public function getSourceContext()
     {
-        return new Source("", "recent_favorite_table_no_tables.twig", "D:\\xampp4\\phpMyAdmin\\templates\\recent_favorite_table_no_tables.twig");
+        return new Source("", "recent_favorite_table_no_tables.twig", "D:\\test-public2\\phpMyAdmin\\templates\\recent_favorite_table_no_tables.twig");
     }
 }

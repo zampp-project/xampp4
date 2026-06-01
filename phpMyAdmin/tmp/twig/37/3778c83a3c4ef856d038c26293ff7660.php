@@ -751,6 +751,6 @@ yield _gettext("Get more themes!");
 
     public function getSourceContext()
     {
-        return new Source("", "home/index.twig", "D:\\xampp4\\phpMyAdmin\\templates\\home\\index.twig");
+        return new Source("", "home/index.twig", "D:\\test-public2\\phpMyAdmin\\templates\\home\\index.twig");
     }
 }

@@ -185,6 +185,6 @@ yield _gettext("Table:");
 
     public function getSourceContext()
     {
-        return new Source("", "menu/breadcrumbs.twig", "D:\\xampp4\\phpMyAdmin\\templates\\menu\\breadcrumbs.twig");
+        return new Source("", "menu/breadcrumbs.twig", "D:\\test-public2\\phpMyAdmin\\templates\\menu\\breadcrumbs.twig");
     }
 }

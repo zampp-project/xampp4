@@ -88,6 +88,6 @@ yield _gettext("Close");
 
     public function getSourceContext()
     {
-        return new Source("", "modals/unhide_nav_item.twig", "D:\\xampp4\\phpMyAdmin\\templates\\modals\\unhide_nav_item.twig");
+        return new Source("", "modals/unhide_nav_item.twig", "D:\\test-public2\\phpMyAdmin\\templates\\modals\\unhide_nav_item.twig");
     }
 }

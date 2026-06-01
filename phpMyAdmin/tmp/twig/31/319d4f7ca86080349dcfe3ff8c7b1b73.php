@@ -261,6 +261,6 @@ yield _gettext("Switch to dark theme");
 
     public function getSourceContext()
     {
-        return new Source("", "console/display.twig", "D:\\xampp4\\phpMyAdmin\\templates\\console\\display.twig");
+        return new Source("", "console/display.twig", "D:\\test-public2\\phpMyAdmin\\templates\\console\\display.twig");
     }
 }
