@@ -160,12 +160,12 @@ Do not manually create or edit the `php/` folder before first run.
 
 ## PHP Version Setup
 
-PHP 8.5.5 is included as the default bundled PHP version.
+PHP 8.5.6 is included as the default bundled PHP version.
 
 It is stored in:
 
 ```text
-php_versions/8.5.5/
+php_versions/8.5.6/
 ```
 
 The active PHP folder is:
@@ -187,7 +187,7 @@ can also prepare the active PHP folder if needed.
 Default bundled PHP version:
 
 ```text
-PHP 8.5.5
+PHP 8.5.6
 ```
 
 ---
