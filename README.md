@@ -6,6 +6,17 @@ This project keeps the familiar XAMPP layout while adding modern usability impro
 
 > **Important:** This is an independent modernized XAMPP package and is **not** an official Apache Friends release.
 
+> [!WARNING]
+> ## Important Compatibility Notice
+>
+> The `xampp_control.exe` file included with the **ZAMPP 4.0.1** release has been heavily modified by **ZAMPP.ORG** and is **not compatible** with past or current official Apache Friends XAMPP releases.
+>
+> This control panel was customized specifically for the ZAMPP distribution. It includes changes for the modernized user interface, PHP version switching, first-run setup handling, updated branding, custom close behavior, single-instance protection, and other ZAMPP-specific improvements.
+>
+> Because of these changes, this `xampp_control.exe` should only be used with the **ZAMPP 4.0.1** package. Replacing the control panel in an official Apache Friends XAMPP installation may cause incorrect paths, missing features, service-control issues, PHP switching problems, or startup errors.
+>
+> For official Apache Friends XAMPP releases, please use the original control panel provided by Apache Friends.
+
 ---
 
 ## Focus for This Release
