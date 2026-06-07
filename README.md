@@ -6,7 +6,6 @@ This project keeps the familiar XAMPP layout while adding modern usability impro
 
 > **Important:** This is an independent modernized XAMPP package and is **not** an official Apache Friends release.
 
-
 ---
 
 ## Focus for This Release
@@ -44,9 +43,9 @@ Do **not** install over an existing XAMPP folder.
 
 This release includes:
 
-- Apache
-- MySQL / MariaDB
-- phpMyAdmin
+- Apache 2.4.67
+- MariaDB 12.3.2
+- phpMyAdmin 5.2.3
 - MercuryMail
 - FileZilla FTP
 - Tomcat
@@ -75,11 +74,11 @@ The dashboard can display:
 - phpMyAdmin version
 - Active PHP version
 - PHP cURL runtime
-- MySQL cURL runtime
+- MySQL/MariaDB cURL runtime
 - MariaDB version
 - Installed PHP versions detected from the `php_versions` folder
 
-Current Versions:
+Current default stack:
 
 ```text
 Apache                  2.4.67
@@ -87,7 +86,7 @@ Apache cURL runtime     8.20.0
 phpMyAdmin              5.2.3
 PHP                     8.5.6
 PHP cURL                8.20.0
-MySQL cURL runtime      8.19.0
+MySQL cURL runtime      8.16.0-DEV
 MariaDB                 12.3.2-MariaDB
 Installed PHP versions  8.5.6
 ```
@@ -220,19 +219,9 @@ These add-ons allow you to add more PHP versions without downloading the full XA
 | PHP 8.4.20 | `php-8.4.20-addon.zip` | PHP 8.4 testing/support |
 | PHP 8.5.4 | `php-8.5.4-addon.zip` | Compatibility/testing with PHP 8.5.4 |
 | PHP 8.5.5 | `php-8.5.5-addon.zip` | Compatibility/testing with PHP 8.5.5 |
-| PHP 8.5.6 | `php-8.5.6-addon.zip` | Compatibility/testing with PHP 8.5.6 |
+| PHP 8.5.7 | `php-8.5.7-addon.zip` | Compatibility/testing with PHP 8.5.7 |
 
 PHP 8.5.6 is already bundled with the main package. You only need to download a PHP add-on if you want to add another PHP version.
-
-> PHP 8.5.6 is available as an optional add-on. The main XAMPP 4.0.1 package still bundles PHP 8.5.6 by default.
-
-PHP 8.5.6 was added as:
-
-```text
-php-8.5.6-addon.zip
-```
-
-on 05/30/2026.
 
 As newer PHP versions are released, they may be added as optional add-ons. PHP 8.5.6 remains the bundled stack version for the main XAMPP 4.0.1 package.
 
@@ -261,25 +250,29 @@ To install an optional PHP version:
 7. Apply/activate the selected PHP version if prompted.
 8. Start the services you need again.
 
-Correct final path example:
+Correct final path examples:
 
 ```text
+xampp/php_versions/8.5.7/php.exe
 xampp/php_versions/8.5.6/php.exe
-```
-
-Another correct example:
-
-```text
 xampp/php_versions/8.4.20/php.exe
 ```
 
 Wrong path example:
 
 ```text
-xampp/php_versions/php-8.5.6-addon/8.5.6/php.exe
+xampp/php_versions/php-8.5.7-addon/8.5.7/php.exe
 ```
 
 If your extracted path looks like the wrong example, move the version folder so `php.exe` is directly inside the version folder.
+
+---
+
+## Legacy PHP Versions
+
+PHP 7.3.33 and PHP 7.4.33 are provided for local development and compatibility testing with older projects.
+
+These versions are end-of-life and should not be used for public-facing production systems.
 
 ---
 
@@ -330,7 +323,7 @@ Examples:
 ```text
 D:\xampp4
 F:\test-public
-F:\xampp-modernized-4.0.0-windows
+F:\xampp-modernized-4.0.1-windows
 C:\Users\YourName\Desktop\xampp-test
 ```
 
@@ -412,7 +405,7 @@ as Administrator and allow first-run setup to complete automatically.
 - The `php/` folder is created automatically from the selected version inside `php_versions/`.
 - Optional PHP versions must be installed into `php_versions/`.
 - If Windows blocks files, use `unblock_xampp.ps1` before running the Control Panel.
-- PHP 8.5.5 is already included with the main package.
+- PHP 8.5.6 is already included with the main package.
 - PHP add-ons are only needed if you want to add another PHP version.
 - When extracting a PHP add-on, make sure `php.exe` is directly inside the version folder.
 - For best results, avoid protected system folders.
@@ -452,7 +445,7 @@ php_versions/<version>/php.exe
 Example:
 
 ```text
-php_versions/8.5.6/php.exe
+php_versions/8.5.7/php.exe
 ```
 
 If the add-on extracted into an extra nested folder, move the version folder directly under `php_versions/`.
