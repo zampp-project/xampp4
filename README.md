@@ -9,7 +9,7 @@
 > incomplete work, testing files, or changes that have not completed
 > release validation.
 >
-> **Normal users must download ZAMPP from the latest GitHub Releases
+> **download ZAMPP from the latest GitHub Releases
 > page.**
 >
 > Use only the packaged release assets:
