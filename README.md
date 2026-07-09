@@ -2,7 +2,7 @@
 
 > \[!CAUTION\] \# IMPORTANT: DOWNLOAD RELEASES ONLY
 >
-> **Do not download or install ZAMPP from the repository source code.**
+> **Install ZAMPP from the repository source code.**
 >
 > The repository source is for development and review only. It may
 > contain changes that are newer than the current public release,
@@ -16,7 +16,9 @@
 >
 > ``` text
 > zampp-modernized-4.0.1-windows.zip
-> php-8.5.8-addon.zip
+> php-8.5.7-addon.zip
+> php-8.5.8-addon.zip added July 09, 2026
+> more php versions are available.
 > ```
 >
 > Release assets are the tested and supported packages intended for
