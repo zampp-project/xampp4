@@ -1,8 +1,8 @@
 # ZAMPP 4.0.1 Modernized for Windows
 
-> \[!CAUTION\] \# IMPORTANT: DOWNLOAD RELEASES ONLY
+> [!WARNING] # IMPORTANT: DOWNLOAD RELEASES ONLY
 >
-> **Install ZAMPP from the repository source code.**
+>> **Please Don\'t Install ZAMPP from the repository source code.**
 >
 > The repository source is for development and review only. It may
 > contain changes that are newer than the current public release,
