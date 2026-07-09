@@ -1,5 +1,31 @@
 # ZAMPP 4.0.1 Modernized for Windows
 
+> \[!CAUTION\] \# IMPORTANT: DOWNLOAD RELEASES ONLY
+>
+> **Do not download or install ZAMPP from the repository source code.**
+>
+> The repository source is for development and review only. It may
+> contain changes that are newer than the current public release,
+> incomplete work, testing files, or changes that have not completed
+> release validation.
+>
+> **Normal users must download ZAMPP from the latest GitHub Releases
+> page.**
+>
+> Use only the packaged release assets:
+>
+> ``` text
+> zampp-modernized-4.0.1-windows.zip
+> php-8.5.8-addon.zip
+> ```
+>
+> Release assets are the tested and supported packages intended for
+> installation.
+>
+> If you install from repository source instead of the current release
+> package, the installation may not match the supported release version
+> and support may not be available.
+
 **ZAMPP 4.0.1 Modernized** is a Windows-focused XAMPP package with a
 refreshed dashboard, improved first-run setup, and PHP version
 management built into the ZAMPP Control Panel.
@@ -281,31 +307,31 @@ full XAMPP package again.
 
 ### Available PHP Add-ons
 
-  -----------------------------------------------------------------------
-  PHP Version            Add-on ZIP               Purpose
-  ---------------------- ------------------------ -----------------------
-  PHP 7.3.33             `php-7.3.33-addon.zip`   Legacy project
-                                                  compatibility
+  ----------------------------------------------------------------------
+  PHP Version           Add-on ZIP               Purpose
+  --------------------- ------------------------ -----------------------
+  PHP 7.3.33            `php-7.3.33-addon.zip`   Legacy project
+                                                 compatibility
 
-  PHP 7.4.33             `php-7.4.33-addon.zip`   Legacy project
-                                                  compatibility
+  PHP 7.4.33            `php-7.4.33-addon.zip`   Legacy project
+                                                 compatibility
 
-  PHP 8.2.12             `php-8.2.12-addon.zip`   PHP 8.2 testing/support
+  PHP 8.2.12            `php-8.2.12-addon.zip`   PHP 8.2 testing/support
 
-  PHP 8.4.20             `php-8.4.20-addon.zip`   PHP 8.4 testing/support
+  PHP 8.4.20            `php-8.4.20-addon.zip`   PHP 8.4 testing/support
 
-  PHP 8.5.4              `php-8.5.4-addon.zip`    Compatibility/testing
-                                                  with PHP 8.5.4
+  PHP 8.5.4             `php-8.5.4-addon.zip`    Compatibility/testing
+                                                 with PHP 8.5.4
 
-  PHP 8.5.5              `php-8.5.5-addon.zip`    Compatibility/testing
-                                                  with PHP 8.5.5
+  PHP 8.5.5             `php-8.5.5-addon.zip`    Compatibility/testing
+                                                 with PHP 8.5.5
 
-  PHP 8.5.7              `php-8.5.7-addon.zip`    Compatibility/testing
-                                                  with PHP 8.5.7
+  PHP 8.5.7             `php-8.5.7-addon.zip`    Compatibility/testing
+                                                 with PHP 8.5.7
 
-  PHP 8.5.8              `php-8.5.8-addon.zip`    Compatibility/testing
-                                                  with PHP 8.5.8
-  -----------------------------------------------------------------------
+  PHP 8.5.8             `php-8.5.8-addon.zip`    Compatibility/testing
+                                                 with PHP 8.5.8
+  ----------------------------------------------------------------------
 
 PHP 8.5.6 is already bundled with the main package. You only need to
 download a PHP add-on if you want to add another PHP version.
@@ -461,7 +487,9 @@ contributing to the project.
 
 ## Main Package Download
 
-Download the main package from the release assets:
+Download the main package from the **GitHub Releases release assets**.
+
+Do not download the repository source ZIP for installation.
 
 ``` text
 xampp-modernized-4.0.1-windows.zip
