@@ -34,9 +34,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -48,7 +48,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
     <h1 class="page-title">Troubleshoot Apache Startup Problems</h1>
     <p class="page-lead">Guides and references for configuring this local development stack.</p>
   </div>
@@ -79,7 +79,7 @@
               <li><a href="/dashboard/docs/troubleshoot-apache.html#ports_80_and_443_in_use_by_skype">Ports 80 and 443 in use by Skype</a></li>
               <li><a href="/dashboard/docs/troubleshoot-apache.html#port_443_in_use_by_vmware">Port 443 in use by VMWare</a></li>
               <li><a href="/dashboard/docs/troubleshoot-apache.html#serverroot_must_be_a_valid_directory">ServerRoot Must Be a Valid Directory</a></li>
-              <li><a href="/dashboard/docs/troubleshoot-apache.html#xampp_cannot_start_on_port_80_windows_10">XAMPP cannot start on port 80 (Windows 10)</a></li>
+              <li><a href="/dashboard/docs/troubleshoot-apache.html#xampp_cannot_start_on_port_80_windows_10">ZAMPP cannot start on port 80 (Windows 10)</a></li>
               <li><a href="/dashboard/docs/troubleshoot-apache.html#the_microsoft_edge_browser_cannot_be_used_to_access_local_addresses_using_the_machine_host_name">The Microsoft Edge browser cannot be used to access local addresses using the machine host name.</a></li>
           </ol>
         </aside>
@@ -107,7 +107,7 @@ The information in this document is based on <a href="https://community.apachefr
 <h2 id="_port_80_in_use_by_pid_4">Port 80 in use by PID 4</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Your XAMPP control panel displays this message:</p>
+<p>Your ZAMPP control panel displays this message:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -120,10 +120,10 @@ The information in this document is based on <a href="https://community.apachefr
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Right-click the XAMPP control panel icon and select "Run as administrator". Enter administrator credentials (if required) and click "OK" or "Yes" to proceed.</p>
+<p>Right-click the ZAMPP control panel icon and select "Run as administrator". Enter administrator credentials (if required) and click "OK" or "Yes" to proceed.</p>
 </li>
 <li>
-<p>Open your Windows command prompt by clicking the "Shell" button in the XAMPP control panel.</p>
+<p>Open your Windows command prompt by clicking the "Shell" button in the ZAMPP control panel.</p>
 </li>
 <li>
 <p>At the command prompt, enter this command:</p>
@@ -181,7 +181,7 @@ If the problem persists even after performing these steps, it could be due to a 
 <h2 id="_ports_80_and_443_in_use_by_skype">Ports 80 and 443 in use by Skype</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Your XAMPP control panel displays these messages:</p>
+<p>Your ZAMPP control panel displays these messages:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -216,7 +216,7 @@ XX:XX:XX [Apache] Port 443 in use by "C:\Program Files (x86)\Skype\Phone\Skype.e
 <h2 id="_port_443_in_use_by_vmware">Port 443 in use by VMWare</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Your XAMPP control panel displays these messages:</p>
+<p>Your ZAMPP control panel displays these messages:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -253,12 +253,12 @@ XX:XX:XX [Apache] Port 443 in use by "C:\Program Files (x86)\Skype\Phone\Skype.e
 </div>
 </div>
 <div class="paragraph">
-<p>This is a common issue for XAMPP installations on portable devices. It occurs if the Apache configuration file points to a directory that no longer exists (for example, due to a drive letter change when a portable device is removed and reinserted). To solve this problem, follow these steps:</p>
+<p>This is a common issue for ZAMPP installations on portable devices. It occurs if the Apache configuration file points to a directory that no longer exists (for example, due to a drive letter change when a portable device is removed and reinserted). To solve this problem, follow these steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>If the Apache service is registered (indicated by a green check mark next to its name in the XAMPP control panel), unregister it by clicking the check mark and answering "Yes" in the resulting dialog box.</p>
+<p>If the Apache service is registered (indicated by a green check mark next to its name in the ZAMPP control panel), unregister it by clicking the check mark and answering "Yes" in the resulting dialog box.</p>
 <div class="imageblock">
 <div class="content">
 <img src="./images/troubleshoot-apache/image3.png" alt="image3">
@@ -266,7 +266,7 @@ XX:XX:XX [Apache] Port 443 in use by "C:\Program Files (x86)\Skype\Phone\Skype.e
 </div>
 </li>
 <li>
-<p>Edit the <em>setup_xampp.bat</em> file in your XAMPP installation directory (usually, <em>C:\xampp</em>). Within the file, find this line:</p>
+<p>Edit the <em>setup_xampp.bat</em> file in your ZAMPP installation directory (usually, <em>C:\xampp</em>). Within the file, find this line:</p>
 <div class="literalblock">
 <div class="content">
 <pre>%PHP_BIN% -n -d output_buffering=0 %CONFIG_PHP%</pre>
@@ -289,10 +289,10 @@ XX:XX:XX [Apache] Port 443 in use by "C:\Program Files (x86)\Skype\Phone\Skype.e
 </div>
 </div>
 <div class="sect1">
-<h2 id="_xampp_cannot_start_on_port_80_windows_10">XAMPP cannot start on port 80 (Windows 10)</h2>
+<h2 id="_xampp_cannot_start_on_port_80_windows_10">ZAMPP cannot start on port 80 (Windows 10)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>By default, Windows 10 starts Microsoft IIS on port 80, which is the same default port used by Apache in XAMPP. As a result, Apache cannot bind to port 80.</p>
+<p>By default, Windows 10 starts Microsoft IIS on port 80, which is the same default port used by Apache in ZAMPP. As a result, Apache cannot bind to port 80.</p>
 </div>
 <div class="paragraph">
 <p>To check whether port 80 is in use, open a command prompt and run these commands:</p>
@@ -344,7 +344,7 @@ netstat -o -n -a | findstr 127.0.0.1:80</pre>
 </ol>
 </div>
 <div class="paragraph">
-<p>You should now be able to start Apache in XAMPP on port 80.</p>
+<p>You should now be able to start Apache in ZAMPP on port 80.</p>
 </div>
 </div>
 </div>
@@ -374,7 +374,7 @@ netstat -o -n -a | findstr 127.0.0.1:80</pre>
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

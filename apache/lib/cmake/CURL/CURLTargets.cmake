@@ -7,7 +7,7 @@ if(CMAKE_VERSION VERSION_LESS "2.8.12")
    message(FATAL_ERROR "CMake >= 2.8.12 required")
 endif()
 cmake_policy(PUSH)
-cmake_policy(VERSION 2.8.12...4.0)
+cmake_policy(VERSION 2.8.12...4.1)
 #----------------------------------------------------------------
 # Generated CMake target import file.
 #----------------------------------------------------------------
@@ -61,7 +61,7 @@ add_library(CURL::libcurl_static STATIC IMPORTED)
 set_target_properties(CURL::libcurl_static PROPERTIES
   INTERFACE_COMPILE_DEFINITIONS "CURL_STATICLIB"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:OpenSSL::SSL>;\$<LINK_ONLY:OpenSSL::Crypto>;\$<LINK_ONLY:ZLIB::ZLIB>;\$<LINK_ONLY:CURL::brotli>;\$<LINK_ONLY:CURL::nghttp2>;\$<LINK_ONLY:wldap32>;\$<LINK_ONLY:bcrypt>;\$<LINK_ONLY:advapi32>;\$<LINK_ONLY:crypt32>;\$<LINK_ONLY:secur32>;\$<LINK_ONLY:ws2_32>;\$<LINK_ONLY:iphlpapi>"
+  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:OpenSSL::SSL>;\$<LINK_ONLY:OpenSSL::Crypto>;\$<LINK_ONLY:ZLIB::ZLIB>;\$<LINK_ONLY:CURL::brotli>;\$<LINK_ONLY:CURL::zstd>;\$<LINK_ONLY:CURL::nghttp2>;\$<LINK_ONLY:wldap32>;\$<LINK_ONLY:normaliz>;\$<LINK_ONLY:bcrypt>;\$<LINK_ONLY:advapi32>;\$<LINK_ONLY:crypt32>;\$<LINK_ONLY:secur32>;\$<LINK_ONLY:ws2_32>;\$<LINK_ONLY:iphlpapi>"
 )
 
 # Create imported target CURL::libcurl_shared

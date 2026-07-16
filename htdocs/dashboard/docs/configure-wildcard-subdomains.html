@@ -34,9 +34,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -48,7 +48,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
     <h1 class="page-title">Configure Wildcard-Based Subdomains</h1>
     <p class="page-lead">Guides and references for configuring this local development stack.</p>
   </div>
@@ -86,14 +86,14 @@
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Virtual hosts created in this manner will not be accessible from other systems, unless those systems are separately configured to associate the custom domains used by virtual hosts with the IP address of the XAMPP server.
+Virtual hosts created in this manner will not be accessible from other systems, unless those systems are separately configured to associate the custom domains used by virtual hosts with the IP address of the ZAMPP server.
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>This guide walks you through the process of setting up wildcard virtual hosts with XAMPP, such that requests for <em>subdomain.localhost</em> are automatically served by the <em>subdomain/</em> directory of the main server document root. Follow the steps below:
- . Change to your XAMPP installation directory (typically, <em>C:\xampp</em>) and open the <em>httpd.conf</em> file in the <em>apache\conf\</em> subdirectory using your favourite text editor. Within the file, find the following line and uncomment it by removing the hash symbol (#) at the beginning of the line.</p>
+<p>This guide walks you through the process of setting up wildcard virtual hosts with ZAMPP, such that requests for <em>subdomain.localhost</em> are automatically served by the <em>subdomain/</em> directory of the main server document root. Follow the steps below:
+ . Change to your ZAMPP installation directory (typically, <em>C:\xampp</em>) and open the <em>httpd.conf</em> file in the <em>apache\conf\</em> subdirectory using your favourite text editor. Within the file, find the following line and uncomment it by removing the hash symbol (#) at the beginning of the line.</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -103,7 +103,7 @@ Virtual hosts created in this manner will not be accessible from other systems, 
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Next, edit the <em>httpd-vhosts.conf</em> file in the <em>apache\conf\extra\</em> subdirectory of your XAMPP installation directory.</p>
+<p>Next, edit the <em>httpd-vhosts.conf</em> file in the <em>apache\conf\extra\</em> subdirectory of your ZAMPP installation directory.</p>
 </li>
 <li>
 <p>Replace the contents of this file with the following directives:</p>
@@ -130,7 +130,7 @@ Virtual hosts created in this manner will not be accessible from other systems, 
 </div>
 </li>
 <li>
-<p>Restart Apache using the XAMPP control panel for your changes to take effect.</p>
+<p>Restart Apache using the ZAMPP control panel for your changes to take effect.</p>
 <div class="imageblock">
 <div class="content">
 <img src="./images/configure-wildcard-subdomains/image2.png" alt="image2">
@@ -217,7 +217,7 @@ On some versions of Windows, you will not be able to edit the <em>C:\windows\sys
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

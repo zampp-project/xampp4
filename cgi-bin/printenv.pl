@@ -1,4 +1,4 @@
-#!"D:D:F:F:\test-public-modernized-4.0.0-windows4\perl\bin\perl.exe"
+#!"D:/xampp\perl\bin\perl.exe"
 ##
 ##  printenv -- demo CGI program which just prints its environment
 ##

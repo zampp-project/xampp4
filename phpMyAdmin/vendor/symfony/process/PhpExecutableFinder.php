@@ -73,7 +73,7 @@ class PhpExecutableFinder
 
         $dirs = [\PHP_BINDIR];
         if ('\\' === \DIRECTORY_SEPARATOR) {
-            $dirs[] = 'C:\xampp\php\\';
+            $dirs[] = 'D:\\xampp\php\\';
         }
 
         return $this->executableFinder->find('php', false, $dirs);

@@ -34,9 +34,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -48,7 +48,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
     <h1 class="page-title">Activate and Use Xdebug</h1>
     <p class="page-lead">Guides and references for configuring this local development stack.</p>
   </div>
@@ -74,7 +74,7 @@
     <article class="asciidoctor">
       <h1>Activate and Use Xdebug</h1>
 <div class="paragraph">
-<p><a href="http://xdebug.org/">Xdebug</a> is a powerful open source debugger and profiler for PHP. It is included with XAMPP and can be used to display stack traces, analyze code coverage and profile your PHP code.</p>
+<p><a href="http://xdebug.org/">Xdebug</a> is a powerful open source debugger and profiler for PHP. It is included with ZAMPP and can be used to display stack traces, analyze code coverage and profile your PHP code.</p>
 </div>
 <div class="paragraph">
 <p>To activate Xdebug, follow these steps:</p>
@@ -82,7 +82,7 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your XAMPP installation directory (usually, <em>C:\xampp</em>). Within this file, find the [XDebug] section and within it, add the following configuration directive (or modify the existing one):</p>
+<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your ZAMPP installation directory (usually, <em>C:\xampp</em>). Within this file, find the [XDebug] section and within it, add the following configuration directive (or modify the existing one):</p>
 <div class="literalblock">
 <div class="content">
 <pre>zend_extension = "C:/xampp/php/ext/php_xdebug.dll"</pre>
@@ -90,7 +90,7 @@
 </div>
 </li>
 <li>
-<p>Restart the Apache server using the XAMPP control panel.</p>
+<p>Restart the Apache server using the ZAMPP control panel.</p>
 </li>
 </ol>
 </div>
@@ -103,7 +103,7 @@
 </div>
 </div>
 <div class="paragraph">
-<p>Xdebug overloads the default <em>var_dump(</em>) function with its own version that includes (among other things) color coding for different PHP types, so you can see it in action immediately by using the <em>var_dump()</em> function in a PHP script. For example, create a simple PHP script in the <em>htdocs\</em> subdirectory of your XAMPP installation directory with the following content:</p>
+<p>Xdebug overloads the default <em>var_dump(</em>) function with its own version that includes (among other things) color coding for different PHP types, so you can see it in action immediately by using the <em>var_dump()</em> function in a PHP script. For example, create a simple PHP script in the <em>htdocs\</em> subdirectory of your ZAMPP installation directory with the following content:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -125,7 +125,7 @@ var_dump($_SERVER);</pre>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your XAMPP installation directory. Within this file, find the [XDebug] section and within it, uncomment and modify the lines below so that they look like this:</p>
+<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your ZAMPP installation directory. Within this file, find the [XDebug] section and within it, uncomment and modify the lines below so that they look like this:</p>
 <div class="literalblock">
 <div class="content">
 <pre>xdebug.profiler_append = 0
@@ -137,7 +137,7 @@ xdebug.profiler_output_name = "cachegrind.out.%t-%s"</pre>
 </div>
 </li>
 <li>
-<p>Restart the Apache server using the XAMPP control panel.</p>
+<p>Restart the Apache server using the ZAMPP control panel.</p>
 </li>
 </ol>
 </div>
@@ -172,7 +172,7 @@ To find out more about Xdebug’s powerful features, <a href="http://xdebug.org/
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

@@ -1,5 +1,0 @@
-Apache: 2.4.66
-PHP: 8.5.4
-MariaDB: 11.8.6
-phpMyAdmin: 5.2.3
-Base XAMPP source: xampp-windows-x64-8.5.4-0-VS0.zip

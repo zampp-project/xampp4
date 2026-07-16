@@ -1,645 +1,300 @@
-# 📢 Release Notice: Temporary File Removal for v4.0.3
+﻿# IMPORTANT PUBLICATION AND PROJECT NOTICE
 
-In preparation for the upcoming **v4.0.3 release**, we are temporarily removing all PHP add-ons and specific legacy Windows installation packages.
-
-### 🚫 Affected Assets
-The following distribution files are temporarily unavailable for download:
-* `xampp-modernized-4.0.0-windows.zip`
-* `xampp-modernized-4.0.1-windows.zip`
-* `xampp-modernized-4.0.2-windows.zip`
-* All PHP add-on packages
-
-### 🔧 Reason for Removal
-These assets are being cleared to prevent version conflicts, streamline the archive, and ensure a clean, stable upgrade path to **v4.0.3**.
-
-
-Thank you for your patience as we prepare this update!
-
-
-# ZAMPP 4.0.1 Modernized for Windows
-
-> # IMPORTANT: DOWNLOAD RELEASES ONLY
+> [!IMPORTANT]
+> **ZAMPP is an independent software project and distribution. It is not XAMPP, is not an official XAMPP release, and is not affiliated
+> with, endorsed by, sponsored by, or maintained by Apache Friends.**
 >
->> **Please Don\'t Install ZAMPP from the repository source code.**
+> ZAMPP is developed, packaged, maintained, and distributed independently under the ZAMPP project name. Any references to XAMPP, Apache Friends, or
+> original upstream component names are provided only where necessary for historical context, compatibility, inherited file naming, or identification
+> of third-party software components.
 >
-> The repository source is for development and review only. It may
-> contain changes that are newer than the current public release,
-> incomplete work, testing files, or changes that have not completed
-> release validation.
+> Official ZAMPP releases, updates, documentation, support information, and PHP add-ons are provided only through official ZAMPP project channels and
+> designated ZAMPP release pages.
 >
-> **download ZAMPP from the latest GitHub Releases
-> page.**
+> **Do not represent ZAMPP packages as official XAMPP or Apache Friends releases.**
 >
-> Use only the packaged release assets:
->
-> ``` text
-> zampp-modernized-4.0.1-windows.zip
-> php-8.5.7-addon.zip
-> php-8.5.8-addon.zip added July 09, 2026
-> more php versions are available.
-> ```
->
-> Release assets are the tested and supported packages intended for
-> installation.
->
-> If you install from repository source instead of the current release
-> package, the installation may not match the supported release version
-> and support may not be available.
+> Users seeking support for ZAMPP should use ZAMPP support resources. Apache Friends and the XAMPP project are not responsible for
+> ZAMPP builds, modifications, packaging, updates, support, or compatibility.
 
-**ZAMPP 4.0.1 Modernized** is a Windows-focused XAMPP package with a
-refreshed dashboard, improved first-run setup, and PHP version
-management built into the ZAMPP Control Panel.
+---
+# ZAMPP 4.0.3 Modernized
 
-This project keeps the familiar XAMPP layout while adding modern
-usability improvements, including a PHP version dropdown, optional PHP
-add-on support, cleaner release packaging, and a better first-run
-experience.
+**ZAMPP 4.0.3 Modernized** is a Windows-focused ZAMPP package with a refreshed dashboard, improved first-run setup, and PHP version management built into the ZAMPP Control Panel.
 
-> **Important:** This is an independent modernized ZAMPP package and is
-> **not** an official Apache Friends release.
+This project keeps the familiar ZAMPP layout while adding modern usability improvements, including a PHP version dropdown, optional PHP add-on support, cleaner release packaging, and a better first-run experience.
 
-> \[!WARNING\] \## Important Compatibility Notice
->
-> The `xampp_control.exe` file included with the **ZAMPP 4.0.1** release
-> has been heavily modified by **ZAMPP.ORG** and is **not compatible**
-> with past or current official Apache Friends XAMPP releases.
->
-> This control panel was customized specifically for the ZAMPP
-> distribution. It includes changes for the modernized user interface,
-> PHP version switching, first-run setup handling, updated branding,
-> custom close behavior, single-instance protection, and other
-> ZAMPP-specific improvements.
->
-> Because of these changes, this `xampp_control.exe` should only be used
-> with the **ZAMPP 4.0.1** package. Replacing the control panel in an
-> official Apache Friends XAMPP installation may cause incorrect paths,
-> missing features, service-control issues, PHP switching problems, or
-> startup errors.
->
-> For official Apache Friends XAMPP releases, please use the original
-> control panel provided by Apache Friends.
+> **Important:** This is an independent modernized ZAMPP package and is **not** an official Apache Friends release.
 
-------------------------------------------------------------------------
+---
 
 ## Focus for This Release
 
 For now, this project focuses on:
 
--   `README.md`
--   Release description
--   Release ZIP files
--   Optional PHP add-on ZIPs
+- `README.md`
+- Release description
+- Release ZIP files
+- Optional PHP add-on ZIPs
 
-The main repository contains the project files, while regular users
-should download the ready-to-use ZIP files from **GitHub Releases**.
+The main repository contains the project files, while regular users should download the ready-to-use ZIP files from **GitHub Releases**.
 
-------------------------------------------------------------------------
+---
 
 ## Latest Release
 
-The latest public release is available from the **GitHub Releases**
-page.
+The latest public release is available from the **GitHub Releases** page.
 
-**Current release:** XAMPP 4.0.1 Modernized with PHP 8.5.6 bundled by
-default.
+**Current release:** ZAMPP 4.0.3 Modernized with PHP 8.5.8
 
-> \[!INFO\] \## Using the Latest Release
->
-> Always download the newest release assets from the official ZAMPP
-> GitHub Releases page.
->
-> The latest release package contains the current supported ZAMPP
-> Control Panel, setup system, and default bundled PHP version.
->
-> If you need a newer PHP version than the one included in the main
-> package:
->
-> 1.  Download the matching PHP add-on ZIP from the latest release.
-> 2.  Stop XAMPP services.
-> 3.  Close `xampp_control.exe`.
-> 4.  Extract the PHP add-on into your XAMPP installation.
-> 5.  Restart `xampp_control.exe` as Administrator.
-> 6.  Select the installed PHP version from the PHP version dropdown.
->
-> Do not mix PHP add-ons from older ZAMPP releases unless compatibility
-> has been confirmed.
->
-> PHP add-ons are version-specific and are tested against the ZAMPP
-> release they are published with.
+Download the main ZAMPP ZIP from the release assets, extract it to a clean folder, and run `ZAMPP-control.exe` as Administrator.
 
-Download the main XAMPP ZIP from the release assets, extract it to a
-clean folder, and run:
+Do **not** install over an existing ZAMPP folder.
 
-``` text
-zampp_control.exe
-```
-
-as Administrator.
-
-Do **not** install over an existing XAMPP folder.
-
-------------------------------------------------------------------------
+---
 
 ## Included Components
 
 This release includes:
 
--   Apache 2.4.67
--   MariaDB 12.3.2
--   phpMyAdmin 5.2.3
--   MercuryMail
--   FileZilla FTP
--   Tomcat
--   Perl
--   PHP 8.5.6 as the default bundled PHP version
--   Modernized XAMPP dashboard
--   Runtime Overview dashboard card
--   Installed PHP versions dashboard display
--   Updated setup/start/stop scripts
--   PHP version dropdown in the ZAMPP Control Panel
--   Optional PHP version add-on support
--   Internal first-run setup
--   Manual `setup_xampp.bat` fallback
--   Windows unblock helper script
+- Apache
+- MySQL / MariaDB
+- phpMyAdmin
+- MercuryMail
+- FileZilla FTP
+- Tomcat
+- Perl
+- PHP 8.5.8 default bundled version
+- Modernized ZAMPP dashboard
+- Updated setup/start/stop scripts
+- PHP version dropdown in the ZAMPP Control Panel
+- Optional PHP version add-on support
+- Windows unblock helper script
 
-------------------------------------------------------------------------
-
-## Dashboard Runtime Overview
-
-The modernized dashboard includes a **Runtime Overview** panel that
-shows the active local stack.
-
-The dashboard can display:
-
--   Apache version
--   Apache cURL runtime
--   phpMyAdmin version
--   Active PHP version
--   PHP cURL runtime
--   MySQL/MariaDB cURL runtime
--   MariaDB version
--   Installed PHP versions detected from the `php_versions` folder
-
-Current default stack:
-
-``` text
-Apache                  2.4.67
-Apache cURL runtime     8.20.0
-phpMyAdmin              5.2.3
-PHP                     8.5.6
-PHP cURL                8.20.0
-MySQL cURL runtime      8.16.0-DEV
-MariaDB                 12.3.2-MariaDB
-Installed PHP versions  8.5.6
-```
-
-The active PHP version is marked automatically.
-
-------------------------------------------------------------------------
+---
 
 ## First Run Instructions
 
-1.  Download the main XAMPP ZIP from GitHub Releases.
+1. Download the main ZAMPP ZIP from GitHub Releases.
+2. Extract it to a clean folder.
 
-2.  Extract it to a clean folder.
+   Recommended examples:
 
-    Recommended examples:
-
-    ``` text
-    C:\zampp
-    D:\zampp
-    F:\zampp-modernized
-    ```
-
-3.  Do **not** extract over an existing XAMPP folder.
-
-4.  Right-click:
-
-    ``` text
-    zampp_control.exe
-    ```
-
-5.  Choose **Run as administrator**.
-
-6.  Allow the first-run setup to complete.
-
-7.  Use the PHP version dropdown if needed.
-
-8.  Start Apache, MySQL/MariaDB, or any other services you want to use.
-
-On first run, `xampp_control.exe` prepares the local folder
-automatically.
-
-The first-run setup:
-
--   Detects the actual folder where XAMPP was extracted
--   Creates the active `php/` folder
--   Creates the Apache PHP active configuration
--   Repairs Apache paths for the current folder
--   Repairs PHP configuration paths
--   Rebuilds a portable MySQL/MariaDB `my.ini`
--   Creates required runtime folders
--   Validates Apache configuration before completing setup
-
-The package can be extracted to different drives or folder names. The
-setup process is designed to adapt to the actual location.
-
-------------------------------------------------------------------------
-
-## Important First-Run Notes
-
-Before first run, the release ZIP should **not** contain generated
-runtime state such as:
-
-``` text
-php/
-install/.xampp_setup_complete
-install/setup_xampp.log
-install/install.sys
-apache/conf/extra/php-active.conf
-xampp-control.ini
-xampp-control.log
+   ```text
+   D:\\ZAMPP
+   D:\\ZAMPP
+   D:\\ZAMPP
 ```
 
-These files and folders are created automatically when
-`xampp_control.exe` runs for the first time.
+3. Do **not** extract over an existing ZAMPP folder.
+4. Right-click `ZAMPP-control.exe`.
+5. Choose **Run as administrator**.
+6. Allow the first-run setup to complete.
+7. Use the PHP version dropdown if needed.
+8. Start Apache, MySQL, or any other services you want to use.
 
-Do not manually create or edit the `php/` folder before first run.
+On first run, the setup process prepares the active PHP folder and required ZAMPP configuration files.
 
-------------------------------------------------------------------------
+---
 
 ## PHP Version Setup
 
-PHP 8.5.6 is included as the default bundled PHP version.
+PHP 8.5.8 is included as the default bundled PHP version.
 
 It is stored in:
 
-``` text
-php_versions/8.5.6/
+```text
+php_versions/8.5.8/
 ```
 
-The active PHP folder is:
+The active `php/` folder is created automatically on first run and populated/activated by `setup_ZAMPP.bat` / `ZAMPP-control.exe` using the selected PHP version from the control panel PHP version dropdown.
 
-``` text
-php/
-```
-
-The active `php/` folder is created automatically on first run by
-`xampp_control.exe`.
-
-The manual fallback script:
-
-``` text
-setup_xampp.bat
-```
-
-can also prepare the active PHP folder if needed.
+Do **not** manually create or place files inside the `php/` folder before first run.
 
 Default bundled PHP version:
 
-``` text
-PHP 8.5.6
+```text
+PHP 8.5.8
 ```
 
-------------------------------------------------------------------------
+---
 
 ## PHP Version Dropdown
 
 The ZAMPP Control Panel includes a PHP version dropdown.
 
-Use this dropdown to select the PHP version you want XAMPP to use.
+Use this dropdown to select the PHP version you want ZAMPP to use. When a PHP version is selected and applied, the control panel activates that version into the active `php/` folder.
 
-When a PHP version is selected, the Control Panel activates that version
-into the active `php/` folder and updates the Apache PHP configuration.
+After optional PHP add-ons are installed, those versions should also appear in the dropdown.
 
-After optional PHP add-ons are installed, those versions should also
-appear in the dropdown.
-
-------------------------------------------------------------------------
+---
 
 ## Optional PHP Add-ons
 
-Additional PHP versions are available as separate add-on ZIP downloads
-through GitHub Releases.
+Additional PHP versions are available as separate add-on ZIP downloads through GitHub Releases.
 
-These add-ons allow you to add more PHP versions without downloading the
-full XAMPP package again.
+These add-ons allow you to add more PHP versions without downloading the full ZAMPP package again.
 
 ### Available PHP Add-ons
 
-  ----------------------------------------------------------------------
-  PHP Version           Add-on ZIP               Purpose
-  --------------------- ------------------------ -----------------------
-  PHP 7.3.33            `php-7.3.33-addon.zip`   Legacy project
-                                                 compatibility
+| PHP Version | Add-on ZIP | Purpose |
+|---|---|---|
+| PHP 7.3.33 | `php-7.3.33-addon.zip` | Legacy project compatibility |
+| PHP 7.4.33 | `php-7.4.33-addon.zip` | Legacy project compatibility |
+| PHP 8.2.12 | `php-8.2.12-addon.zip` | PHP 8.2.12 testing/support |
+| PHP 8.2.31 | `php-8.2.31-addon.zip` | PHP 8.2.31 testing/support |
+| PHP 8.4.20 | `php-8.4.20-addon.zip` | PHP 8.4.20 testing/support |
+| PHP 8.4.22 | `php-8.4.22-addon.zip` | PHP 8.4.22 testing/support |
+| PHP 8.5.4  | `php-8.5.4-addon.zip`  | PHP 8.5.4 testing/support |
+| PHP 8.5.5  | `php-8.5.5-addon.zip`  | PHP 8.5.5 testing/support |
+| PHP 8.5.6  | `php-8.5.6-addon.zip`  | PHP 8.5.6 testing/support |
+| PHP 8.5.7  | `php-8.5.7-addon.zip`  | PHP 8.5.7 testing/support |
+| PHP 8.5.8  | `php-8.5.8-addon.zip`  | PHP 8.5.8 testing/support |
 
-  PHP 7.4.33            `php-7.4.33-addon.zip`   Legacy project
-                                                 compatibility
 
-  PHP 8.2.12            `php-8.2.12-addon.zip`   PHP 8.2 testing/support
 
-  PHP 8.4.20            `php-8.4.20-addon.zip`   PHP 8.4 testing/support
+PHP 8.5.8 is already bundled with the main package. You only need to download a PHP add-on if you want to add another PHP version.
 
-  PHP 8.5.4             `php-8.5.4-addon.zip`    Compatibility/testing
-                                                 with PHP 8.5.4
-
-  PHP 8.5.5             `php-8.5.5-addon.zip`    Compatibility/testing
-                                                 with PHP 8.5.5
-
-  PHP 8.5.7             `php-8.5.7-addon.zip`    Compatibility/testing
-                                                 with PHP 8.5.7
-
-  PHP 8.5.8             `php-8.5.8-addon.zip`    Compatibility/testing
-                                                 with PHP 8.5.8
-  ----------------------------------------------------------------------
-
-PHP 8.5.6 is already bundled with the main package. You only need to
-download a PHP add-on if you want to add another PHP version.
-
-As newer PHP versions are released, they may be added as optional
-add-ons. PHP 8.5.6 remains the bundled stack version for the main XAMPP
-4.0.1 package.
-
-------------------------------------------------------------------------
+---
 
 ## Installing Optional PHP Versions
 
 To install an optional PHP version:
 
-1.  Stop all running services from the ZAMPP Control Panel.
+1. Stop all running services from the ZAMPP Control Panel.
+2. Quit/close `ZAMPP-control.exe`.
+3. Download the PHP version add-on ZIP you want from GitHub Releases.
+4. Extract the version folder into:
 
-2.  Quit/close:
+   ```text
+   ZAMPP/php_versions/
+   ```
 
-    ``` text
-    zampp_control.exe
-    ```
+5. Start `ZAMPP-control.exe` again as Administrator.
+6. Use the PHP version dropdown in the control panel to select the new PHP version.
+7. Apply/activate the selected PHP version if prompted.
+8. Start the services you need again.
 
-3.  Download the PHP version add-on ZIP you want from GitHub Releases.
+Correct final path example:
 
-4.  Extract the add-on ZIP into your XAMPP root folder, or manually
-    place the version folder inside:
-
-    ``` text
-    zampp/php_versions/
-    ```
-
-5.  Start `xampp_control.exe` again as Administrator.
-
-6.  Use the PHP version dropdown in the Control Panel to select the new
-    PHP version.
-
-7.  Apply/activate the selected PHP version if prompted.
-
-8.  Start the services you need again.
-
-Correct final path examples:
-
-``` text
-zampp/php_versions/8.5.7/php.exe
-zampp/php_versions/8.5.6/php.exe
-zampp/php_versions/8.4.20/php.exe
+```text
+ZAMPP/php_versions/8.4.20/php.exe
 ```
 
 Wrong path example:
 
-``` text
-zampp/php_versions/php-8.5.7-addon/8.5.7/php.exe
+```text
+ZAMPP/php_versions/php-8.4.20-addon/8.4.20/php.exe
 ```
 
-If your extracted path looks like the wrong example, move the version
-folder so `php.exe` is directly inside the version folder.
+If your extracted path looks like the wrong example, move the version folder so `php.exe` is directly inside the version folder.
 
-------------------------------------------------------------------------
-
-## Legacy PHP Versions
-
-PHP 7.3.33 and PHP 7.4.33 are provided for local development and
-compatibility testing with older projects.
-
-These versions are end-of-life and should not be used for public-facing
-production systems.
-
-------------------------------------------------------------------------
+---
 
 ## Windows File Blocking
 
-Windows may block files downloaded from GitHub because they came from
-the internet.
+Windows may block files downloaded from GitHub because they came from the internet.
 
-If XAMPP does not start correctly, or if Windows blocks scripts or
-executables, run the included unblock helper from the extracted XAMPP
-folder.
+If ZAMPP does not start correctly, or if Windows blocks scripts/executables, run the included unblock helper from the extracted ZAMPP folder.
 
 Open PowerShell as Administrator and run:
 
-``` powershell
-cd "C:\path\to\xampp"
-powershell.exe -ExecutionPolicy Bypass -File ".\unblock_xampp.ps1"
+```powershell
+cd "C:\path\to\ZAMPP"
+powershell.exe -ExecutionPolicy Bypass -File ".\unblock_ZAMPP.ps1"
 ```
 
 Example:
 
-``` powershell
-cd "D:\zampp"
-powershell.exe -ExecutionPolicy Bypass -File ".\unblock_xampp.ps1"
+```powershell
+cd "D:\\ZAMPP"
+powershell.exe -ExecutionPolicy Bypass -File ".\unblock_ZAMPP.ps1"
 ```
 
-After the unblock process finishes, run:
+After the unblock process finishes, run `ZAMPP-control.exe` as Administrator again.
 
-``` text
-zampp_control.exe
-```
-
-as Administrator again.
-
-------------------------------------------------------------------------
+---
 
 ## Recommended Install Location
 
 Recommended install locations:
 
-``` text
-C:\zampp
-D:\zampp
-F:\zampp-modernized
-```
-
-Custom folder names are supported.
-
-Examples:
-
-``` text
-D:\zampp4
-F:\test-public
-F:\zampp-modernized-4.0.1-windows
-C:\Users\YourName\Desktop\xampp-test
+```text
+D:\\ZAMPP
+D:\\ZAMPP
+D:\\ZAMPP
 ```
 
 Avoid protected Windows folders:
 
-``` text
-C:\Program Files\xampp
-C:\Windows\xampp
+```text
+C:\Program Files\ZAMPP
+C:\Windows\ZAMPP
 ```
 
-Protected Windows folders may cause permission issues unless everything
-is run with Administrator permissions.
+Protected Windows folders may cause permission issues unless everything is run with Administrator permissions.
 
-------------------------------------------------------------------------
+---
 
 ## Repository vs Release Downloads
 
 The repository contains the project files.
 
-For normal users, the recommended download is the main ZIP package from
-**GitHub Releases**.
+For normal users, the recommended download is the main ZIP package from **GitHub Releases**.
 
 Use the release assets to download:
 
--   Main XAMPP package ZIP
--   Optional PHP version add-ons
--   Future updates
+- Main ZAMPP package ZIP
+- Optional PHP version add-ons
+- Future updates
 
-Do not download individual files manually unless you are modifying or
-contributing to the project.
+Do not download individual files manually unless you are modifying or contributing to the project.
 
-------------------------------------------------------------------------
-
-## Main Package Download
-
-Download the main package from the **GitHub Releases release assets**.
-
-Do not download the repository source ZIP for installation.
-
-``` text
-xampp-modernized-4.0.1-windows.zip
-```
-
-The main package includes:
-
-``` text
-php_versions/8.5.6/
-```
-
-Additional PHP versions are separate optional downloads.
-
-------------------------------------------------------------------------
-
-## Manual Setup Fallback
-
-The Control Panel performs first-run setup automatically.
-
-The included fallback script:
-
-``` text
-setup_xampp.bat
-```
-
-is provided for manual recovery or advanced users.
-
-Most users should run:
-
-``` text
-zampp_control.exe
-```
-
-as Administrator and allow first-run setup to complete automatically.
-
-------------------------------------------------------------------------
+---
 
 ## Important Notes
 
--   This package is intended for Windows.
--   Run `xampp_control.exe` as Administrator.
--   Stop all running services and close `xampp_control.exe` before
-    adding or switching PHP versions.
--   Do not install over an existing XAMPP folder.
--   Extract to a clean folder before first use.
--   Do not manually create or place files in the `php/` folder before
-    first run.
--   The `php/` folder is created automatically from the selected version
-    inside `php_versions/`.
--   Optional PHP versions must be installed into `php_versions/`.
--   If Windows blocks files, use `unblock_xampp.ps1` before running the
-    Control Panel.
--   PHP 8.5.6 is already included with the main package.
--   PHP add-ons are only needed if you want to add another PHP version.
--   When extracting a PHP add-on, make sure `php.exe` is directly inside
-    the version folder.
--   For best results, avoid protected system folders.
+- This package is intended for Windows.
+- Run `ZAMPP-control.exe` as Administrator.
+- Stop all running services and close `ZAMPP-control.exe` before adding or switching PHP versions.
+- Do not install over an existing ZAMPP folder.
+- Extract to a clean folder before first use.
+- Do not manually create or place files in the `php/` folder before first run.
+- The `php/` folder is created automatically from the selected version inside `php_versions/`.
+- Optional PHP versions must be installed into `php_versions/`.
+- If Windows blocks files, use `unblock_ZAMPP.ps1` before running the control panel.
+- PHP 8.5.8 is already included with the main package.
+- PHP add-ons are only needed if you want to add another PHP version.
+- When extracting a PHP add-on, make sure `php.exe` is directly inside the version folder.
+- For best results, avoid deeply nested paths or protected system folders.
 
-------------------------------------------------------------------------
-
-## Troubleshooting
-
-### Apache fails to start
-
-Run this from the XAMPP root folder:
-
-``` powershell
-.\apache\bin\httpd.exe -t
-```
-
-If Apache reports a configuration error, check that first-run setup
-completed successfully.
-
-### MySQL/MariaDB fails to start
-
-Run this from the XAMPP root folder:
-
-``` powershell
-.\mysql\bin\mysqld.exe --defaults-file=".\mysql\bin\my.ini" --console
-```
-
-If the console reports a path error, close the Control Panel and rerun
-first-run setup or use `setup_xampp.bat` as Administrator.
-
-### PHP version does not appear in the dropdown
-
-Confirm the PHP version folder exists here:
-
-``` text
-php_versions/<version>/php.exe
-```
-
-Example:
-
-``` text
-php_versions/8.5.7/php.exe
-```
-
-If the add-on extracted into an extra nested folder, move the version
-folder directly under `php_versions/`.
-
-------------------------------------------------------------------------
+---
 
 ## Project Goals
 
-The goal of this project is to provide a cleaner and more flexible XAMPP
-experience for Windows users.
+The goal of this project is to provide a cleaner and more flexible ZAMPP experience for Windows users.
 
 Main goals:
 
--   Modernize the default XAMPP dashboard.
--   Improve first-run setup.
--   Keep the familiar XAMPP folder layout.
--   Add PHP version switching support.
--   Keep PHP add-ons separate from the main package.
--   Reduce release size by making extra PHP versions optional.
--   Provide ready-to-use release ZIPs for users who do not want to clone
-    the repository.
--   Support portable extraction to different drives and folder names.
+- Modernize the default ZAMPP dashboard.
+- Improve first-run setup.
+- Keep the familiar ZAMPP folder layout.
+- Add PHP version switching support.
+- Keep PHP add-ons separate from the main package.
+- Reduce release size by making extra PHP versions optional.
+- Provide ready-to-use release ZIPs for users who do not want to clone the repository.
 
-------------------------------------------------------------------------
+---
 
 ## License
 
 This project is released under the GPL-3.0 license.
 
-------------------------------------------------------------------------
+---
 
 ## Disclaimer
 
-This project is an independent modernized XAMPP package.
+This project is an independent modernized ZAMPP package.
 
 It is not affiliated with, endorsed by, or maintained by Apache Friends.
+
+   

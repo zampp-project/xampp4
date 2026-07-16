@@ -34,10 +34,10 @@ for C<DATETIME> columns.
 =head1 EXAMPLE DSNs
 
   # older Access versions:
-  dbi:ADO:Microsoft.Jet.OLEDB.4.0;Data Source=C:\Users\rkitover\Documents\access_sample.accdb
+  dbi:ADO:Microsoft.Jet.OLEDB.4.0;Data Source=C:\\Users\\YourName\Documents\access_sample.accdb
 
   # newer Access versions:
-  dbi:ADO:Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\rkitover\Documents\access_sample.accdb;Persist Security Info=False'
+  dbi:ADO:Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\\Users\\YourName\Documents\access_sample.accdb;Persist Security Info=False'
 
 =head1 TEXT/IMAGE/MEMO COLUMNS
 

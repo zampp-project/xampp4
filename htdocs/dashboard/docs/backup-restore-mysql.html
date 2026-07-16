@@ -34,9 +34,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -48,7 +48,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
     <h1 class="page-title">Backup and Restore MySQL/MariaDB Databases</h1>
     <p class="page-lead">Guides and references for configuring this local development stack.</p>
   </div>
@@ -83,10 +83,10 @@
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>As you use XAMPP, you might find that you need to backup or restore a MySQL or MariaDB database. There are two easy ways to do this with XAMPP: using the browser-based phpMyAdmin tool or using MySQL/MariaDB&#8217;s command-line tools. This guide describes both options.</p>
+<p>As you use ZAMPP, you might find that you need to backup or restore a MySQL or MariaDB database. There are two easy ways to do this with ZAMPP: using the browser-based phpMyAdmin tool or using MySQL/MariaDB&#8217;s command-line tools. This guide describes both options.</p>
 </div>
 <div class="paragraph">
-<p>This guide assumes that you already have a PHP application that uses a MySQL/MariaDB database deployed on XAMPP. The example application used in this guide is WordPress, although the steps outlined below will work for any application.</p>
+<p>This guide assumes that you already have a PHP application that uses a MySQL/MariaDB database deployed on ZAMPP. The example application used in this guide is WordPress, although the steps outlined below will work for any application.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -95,7 +95,7 @@
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-Remember that you can install WordPress quickly using the <a href="https://bitnami.com/stack/xampp#wordpress">Bitnami WordPress module for XAMPP</a>.
+Remember that you can install WordPress quickly using the <a href="https://bitnami.com/stack/xampp#wordpress">Bitnami WordPress module for ZAMPP</a>.
 </td>
 </tr>
 </table>
@@ -106,12 +106,12 @@ Remember that you can install WordPress quickly using the <a href="https://bitna
 <h2 id="_using_phpmyadmin">Using phpMyAdmin</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>XAMPP includes <a href="http://www.phpmyadmin.net/">phpMyAdmin</a>, an open-source, browser-based tool for managing MySQL/MariaDB database servers. To backup a MySQL/MariaDB database using phpMyAdmin, follow these steps:</p>
+<p>ZAMPP includes <a href="http://www.phpmyadmin.net/">phpMyAdmin</a>, an open-source, browser-based tool for managing MySQL/MariaDB database servers. To backup a MySQL/MariaDB database using phpMyAdmin, follow these steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Browse to <a href="http://localhost/phpMyAdmin" class="bare">http://localhost/phpMyAdmin</a> or <a href="http://127.0.0.1/phpMyAdmin" class="bare">http://127.0.0.1/phpMyAdmin</a>. If required, log in using your database access credentials. On a fresh XAMPP installation without any changes, you can log in as <em>root</em> with a blank password.</p>
+<p>Browse to <a href="http://localhost/phpMyAdmin" class="bare">http://localhost/phpMyAdmin</a> or <a href="http://127.0.0.1/phpMyAdmin" class="bare">http://127.0.0.1/phpMyAdmin</a>. If required, log in using your database access credentials. On a fresh ZAMPP installation without any changes, you can log in as <em>root</em> with a blank password.</p>
 </li>
 <li>
 <p>Select the database to be backed up from the list in the left navigation pane. In this case, we&#8217;re backing up the WordPress database, which is named <em>bitnami_wordpress</em>.</p>
@@ -204,7 +204,7 @@ Remember that you can install WordPress quickly using the <a href="https://bitna
 </div>
 </div>
 <div class="paragraph">
-<p>You should now update your application&#8217;s configuration and point it to your newly-created database. For example, with the Bitnami WordPress module, you will need to edit the <em>wp-config.php</em> file in the <em>apps\wordpress\htdocs\</em> subdirectory of your XAMPP installation directory. Within this file, you will need to update the <em>DB_NAME</em> constant to use the new database name.</p>
+<p>You should now update your application&#8217;s configuration and point it to your newly-created database. For example, with the Bitnami WordPress module, you will need to edit the <em>wp-config.php</em> file in the <em>apps\wordpress\htdocs\</em> subdirectory of your ZAMPP installation directory. Within this file, you will need to update the <em>DB_NAME</em> constant to use the new database name.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -218,7 +218,7 @@ Remember that you can install WordPress quickly using the <a href="https://bitna
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads up to 2 MB in size. If your database is larger than this, you need to modify the PHP configuration file to accept a larger upload size. To do this, edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your XAMPP installation directory and increase the values of the <em>post_max_size</em> and <em>upload_max_filesize</em> variables. Save your changes and restart Apache for the changes to take effect.
+By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads up to 2 MB in size. If your database is larger than this, you need to modify the PHP configuration file to accept a larger upload size. To do this, edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your ZAMPP installation directory and increase the values of the <em>post_max_size</em> and <em>upload_max_filesize</em> variables. Save your changes and restart Apache for the changes to take effect.
 </td>
 </tr>
 </table>
@@ -237,7 +237,7 @@ By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads 
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Launch a new Windows command shell using the "Shell" button in the XAMPP control panel.</p>
+<p>Launch a new Windows command shell using the "Shell" button in the ZAMPP control panel.</p>
 </li>
 <li>
 <p>Use the command below to export the contents of the selected database. In this example, we&#8217;re backing up the WordPress database, which is named <em>bitnami_wordpress</em>, to a file named <em>bitnami_wordpress.sql</em>. This text file is your backup, so store it safely!</p>
@@ -260,7 +260,7 @@ By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads 
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Launch a new Windows command shell using the "Shell" button in the XAMPP control panel.</p>
+<p>Launch a new Windows command shell using the "Shell" button in the ZAMPP control panel.</p>
 </li>
 <li>
 <p>Use the <em>mysql</em> client to create a new, empty database to hold your data. In this example, the new database is named <em>myblog</em>.</p>
@@ -270,7 +270,7 @@ By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads 
 </div>
 </div>
 <div class="paragraph">
-<p>Remember to use the correct database access credentials in the command. On a fresh XAMPP installation without any changes, you can usually log in as root with a blank password.</p>
+<p>Remember to use the correct database access credentials in the command. On a fresh ZAMPP installation without any changes, you can usually log in as root with a blank password.</p>
 </div>
 </li>
 <li>
@@ -300,7 +300,7 @@ By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads 
 </div>
 </div>
 <div class="paragraph">
-<p>You should now update your application&#8217;s configuration and point it to your newly-created database. For example, with the Bitnami WordPress module, you will need to edit the <em>wp-config.php</em> file in the <em>apps\wordpress\htdocs\</em> subdirectory of your XAMPP installation directory. Within this file, you will need to update the <em>DB_NAME</em> constant to use the new database name.</p>
+<p>You should now update your application&#8217;s configuration and point it to your newly-created database. For example, with the Bitnami WordPress module, you will need to edit the <em>wp-config.php</em> file in the <em>apps\wordpress\htdocs\</em> subdirectory of your ZAMPP installation directory. Within this file, you will need to update the <em>DB_NAME</em> constant to use the new database name.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -317,7 +317,7 @@ By default, PHP (and therefore phpMyAdmin) is configured to only accept uploads 
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

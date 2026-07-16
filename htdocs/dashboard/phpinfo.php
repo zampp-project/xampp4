@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Use title if it's in the page YAML frontmatter -->
-    <title>Welcome to XAMPP</title>
+    <title>Welcome to ZAMPP</title>
 
-    <meta name="description" content="XAMPP is an easy to install Apache distribution containing MariaDB, PHP and Perl." />
+    <meta name="description" content="ZAMPP is an easy to install Apache distribution containing MariaDB, PHP and Perl." />
     <meta name="keywords" content="xampp, apache, php, perl, mariadb, open source distribution" />
 
     <link href="/dashboard/stylesheets/normalize.css" rel="stylesheet" type="text/css" /><link href="/dashboard/stylesheets/all.css" rel="stylesheet" type="text/css" />
@@ -36,9 +36,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -50,8 +50,8 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
-    <h1 class="page-title">Welcome to XAMPP</h1>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
+    <h1 class="page-title">Welcome to ZAMPP</h1>
     <p class="page-lead">Dashboard resources and documentation.</p>
   </div>
 </section>
@@ -67,7 +67,7 @@
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

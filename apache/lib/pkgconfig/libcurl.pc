@@ -26,16 +26,16 @@ prefix=C:/Apache24
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
-supported_protocols="DICT FILE FTP FTPS GOPHER GOPHERS HTTP HTTPS IMAP IMAPS IPFS IPNS LDAP LDAPS MQTT MQTTS POP3 POP3S RTSP SMTP SMTPS TELNET TFTP WS WSS"
-supported_features="alt-svc AsynchDNS brotli HSTS HTTP2 HTTPS-proxy IPv6 Kerberos Largefile libz MultiSSL NativeCA SPNEGO SSL SSPI threadsafe TLS-SRP Unicode UnixSockets"
+supported_protocols="DICT FILE FTP FTPS GOPHER GOPHERS HTTP HTTPS IMAP IMAPS IPFS IPNS LDAP LDAPS MQTT MQTTS POP3 POP3S RTSP SMB SMBS SMTP SMTPS TELNET TFTP WS WSS"
+supported_features="alt-svc AsynchDNS brotli HSTS HTTP2 HTTPS-proxy IDN IPv6 Kerberos Largefile libz MultiSSL NativeCA NTLM SPNEGO SSL SSPI threadsafe TLS-SRP Unicode UnixSockets zstd"
 
 Name: libcurl
 URL: https://curl.se/
 Description: Library to transfer files with HTTP, FTP, etc.
 Version: 8.20.0
 Requires: 
-Requires.private: openssl,zlib,libbrotlidec,libbrotlicommon,libnghttp2
+Requires.private: openssl,zlib,libbrotlidec,libbrotlicommon,libzstd,libnghttp2
 Libs: -L${libdir} -lcurl 
-Libs.private:  -lssl -lcrypto -lcrypto C:/Apache24/lib/z.lib C:/Apache24/lib/brotlidec.lib C:/Apache24/lib/brotlicommon.lib C:/Apache24/bin/nghttp2.dll -lwldap32 -lbcrypt -ladvapi32 -lcrypt32 -lsecur32 -lws2_32 -liphlpapi
+Libs.private:  -lssl -lcrypto -lcrypto C:/Apache24/lib/z.lib C:/Apache24/lib/brotlidec.lib C:/Apache24/lib/brotlicommon.lib C:/Apache24/lib/zstd_static.lib C:/Apache24/bin/nghttp2.dll -lwldap32 -lnormaliz -lbcrypt -ladvapi32 -lcrypt32 -lsecur32 -lws2_32 -liphlpapi
 Cflags: -I${includedir} 
 Cflags.private: -DCURL_STATICLIB

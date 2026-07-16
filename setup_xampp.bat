@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
 REM Always run from the folder where this batch file lives.
@@ -19,7 +19,7 @@ if "%SFX_MODE%"=="1" (
     if exist "xampp\" cd /d "xampp"
 )
 
-set DEFAULT_PHP_VERSION=8.5.5
+set DEFAULT_PHP_VERSION=8.5.8
 set PHP_ACTIVE_DIR=php
 set PHP_VERSION_DIR=php_versions\%DEFAULT_PHP_VERSION%
 set SETUP_MARKER=install\.xampp_setup_complete
@@ -241,7 +241,6 @@ goto EndSuccess
 >> "install\_xampp_path_fix.ps1" echo basedir = "$RootUnix/mysql"
 >> "install\_xampp_path_fix.ps1" echo tmpdir = "$RootUnix/tmp"
 >> "install\_xampp_path_fix.ps1" echo datadir = "$RootUnix/mysql/data"
->> "install\_xampp_path_fix.ps1" echo init-file = "$RootUnix/mysql/bin/phpmyadmin_auto_init.sql"
 >> "install\_xampp_path_fix.ps1" echo pid_file = "mysql.pid"
 >> "install\_xampp_path_fix.ps1" echo log_error = "mysql_error.log"
 >> "install\_xampp_path_fix.ps1" echo plugin_dir = "$RootUnix/mysql/lib/plugin/"

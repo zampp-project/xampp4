@@ -34,7 +34,7 @@ L<DBIx::Class::InflateColumn::DateTime> support for C<DATETIME> columns.
 
 =head1 EXAMPLE DSN
 
-  dbi:ODBC:driver={Microsoft Access Driver (*.mdb, *.accdb)};dbq=C:\Users\rkitover\Documents\access_sample.accdb
+  dbi:ODBC:driver={Microsoft Access Driver (*.mdb, *.accdb)};dbq=C:\\Users\\YourName\Documents\access_sample.accdb
 
 =head1 TEXT/IMAGE/MEMO COLUMNS
 

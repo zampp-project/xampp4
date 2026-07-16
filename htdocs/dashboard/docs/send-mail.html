@@ -34,9 +34,9 @@
     }(document, 'script', 'facebook-jssdk'));</script>
     <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -48,7 +48,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">XAMPP 4.0 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
     <h1 class="page-title">Send Mail with PHP</h1>
     <p class="page-lead">Guides and references for configuring this local development stack.</p>
   </div>
@@ -74,7 +74,7 @@
     <article class="asciidoctor">
       <h1>Send Mail with PHP</h1>
 <div class="paragraph">
-<p>If you&#8217;re a PHP application developer, you might need to send email notifications through your custom PHP applications. With XAMPP, there are two ways to do this: you can use the included <em>sendmail.exe</em> binary, or you can use the third-party <a href="http://phpmailer.worxware.com/">PHPMailer</a> class. This guide walks you through both options.</p>
+<p>If you&#8217;re a PHP application developer, you might need to send email notifications through your custom PHP applications. With ZAMPP, there are two ways to do this: you can use the included <em>sendmail.exe</em> binary, or you can use the third-party <a href="http://phpmailer.worxware.com/">PHPMailer</a> class. This guide walks you through both options.</p>
 </div>
 <div class="admonitionblock note">
 <table>
@@ -89,12 +89,12 @@ This guide assumes that you have an existing Gmail account, and that you will us
 </table>
 </div>
 <div class="paragraph">
-<p>To configure XAMPP to use <em>sendmail.exe</em> for email notifications, follow these steps:</p>
+<p>To configure ZAMPP to use <em>sendmail.exe</em> for email notifications, follow these steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your XAMPP installation directory (usually, <em>C:\xampp</em>). Within this file, find the [mail function] section and replace it with the following directives:</p>
+<p>Edit the <em>php.ini</em> file in the <em>php\</em> subdirectory of your ZAMPP installation directory (usually, <em>C:\xampp</em>). Within this file, find the [mail function] section and replace it with the following directives:</p>
 <div class="literalblock">
 <div class="content">
 <pre>sendmail_path = "\"C:\xampp\sendmail\sendmail.exe\" -t"</pre>
@@ -102,7 +102,7 @@ This guide assumes that you have an existing Gmail account, and that you will us
 </div>
 </li>
 <li>
-<p>Edit the <em>sendmail.ini</em> file in the <em>sendmail\</em> subdirectory of your XAMPP installation directory. Within this file, find the [sendmail] section and replace it with the following directives:</p>
+<p>Edit the <em>sendmail.ini</em> file in the <em>sendmail\</em> subdirectory of your ZAMPP installation directory. Within this file, find the [sendmail] section and replace it with the following directives:</p>
 <div class="literalblock">
 <div class="content">
 <pre>smtp_server=smtp.gmail.com
@@ -118,7 +118,7 @@ auth_password=your-gmail-password</pre>
 </div>
 </li>
 <li>
-<p>Restart the Apache server using the XAMPP control panel.</p>
+<p>Restart the Apache server using the ZAMPP control panel.</p>
 </li>
 </ol>
 </div>
@@ -129,7 +129,7 @@ auth_password=your-gmail-password</pre>
 <div class="content">
 <pre>&lt;?php
 $to = 'recipients@email-address.com';
-$subject = 'Hello from XAMPP!';
+$subject = 'Hello from ZAMPP!';
 $message = 'This is a test';
 $headers = "From: your@email-address.com\r\n";
 if (mail($to, $subject, $message, $headers)) {
@@ -151,7 +151,7 @@ if (mail($to, $subject, $message, $headers)) {
 </div>
 </div>
 <div class="paragraph">
-<p>To configure XAMPP to use PHPMailer for email notifications, follow these steps:</p>
+<p>To configure ZAMPP to use PHPMailer for email notifications, follow these steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -164,7 +164,7 @@ if (mail($to, $subject, $message, $headers)) {
 </div>
 </li>
 <li>
-<p>Create a directory for your new application within the <em>htdocs\</em> subdirectory of your XAMPP installation directory. In this tutorial, the application directory is named <em>example\</em>.</p>
+<p>Create a directory for your new application within the <em>htdocs\</em> subdirectory of your ZAMPP installation directory. In this tutorial, the application directory is named <em>example\</em>.</p>
 </li>
 <li>
 <p>Extract the contents of the PHPMailer ZIP archive to the application directory.</p>
@@ -229,7 +229,7 @@ As a security precaution, Gmail will automatically rewrite the From: and Reply-t
 
     <footer class="site-footer">
   <div class="container footer-grid">
-    <p>Original XAMPP by Apache Friends. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
+    <p>Original ZAMPP by ZAMPP Project. Modified distribution by <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a>.</p>
     <p>Local dashboard for Apache + MariaDB + PHP + Perl.</p>
   </div>
 </footer>

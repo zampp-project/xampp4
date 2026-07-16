@@ -240,7 +240,7 @@ aside {
       aside ol.sections li:last-child {
         margin-bottom: 0; }
 
-/* XAMPP stamps table */
+/* ZAMPP stamps table */
 /* line 314, /app/source-xampp-windows/stylesheets/all.scss */
 table#stamps td:first-child {
   border-right: 1px solid #ddd;
@@ -9291,7 +9291,7 @@ font-weight: bold;
 .badge.db       { background: #b04c12; }  /* dark green */
 
 
-/* ZAMPP/XAMPP 4.0 shared page styling matched to modern index.php */
+/* ZAMPP/ZAMPP 4.0 shared page styling matched to modern index.php */
 :root {
   --bg: #f6f7fb;
   --surface: #ffffff;

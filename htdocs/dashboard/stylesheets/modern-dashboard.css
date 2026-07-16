@@ -672,3 +672,12 @@ a:hover { text-decoration: underline; }
   color: #1f2937;
 }
 
+.notice-card p {
+  text-align: justify;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.notice-card p:last-child {
+  margin-bottom: 0;
+}

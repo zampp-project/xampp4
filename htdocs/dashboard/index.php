@@ -1,5 +1,5 @@
 <?php
-// Modern XAMPP Dashboard
+// Modern ZAMPP Dashboard
 // Keeps the existing runtime detection logic and PHP cURL fallback for active-junction installs.
 
 $server = $_SERVER['SERVER_SOFTWARE'] ?? '';
@@ -39,7 +39,7 @@ if (preg_match('/Apache\/([0-9\.]+)/', $server, $m)) {
 $php = phpversion() ?: 'Unknown';
 
 // --- PHP cURL ---
-// Robust detection for Apache module SAPI, with CLI fallback for XAMPP active-junction installs.
+// Robust detection for Apache module SAPI, with CLI fallback for ZAMPP active-junction installs.
 $curl = 'Unavailable';
 
 function detectPhpCurlVersion(): string
@@ -61,9 +61,8 @@ function detectPhpCurlVersion(): string
         return 'Enabled';
     }
 
-    // 2) Fallback for XAMPP dashboards: ask the active php\php.exe used by the selector.
-    $xamppRoot = dirname($_SERVER['DOCUMENT_ROOT'] ?? __DIR__);
-    $phpExe = $xamppRoot . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'php.exe';
+    // 2) Fallback for ZAMPP dashboards: ask the active php\php.exe used by the selector.
+        $phpExe = $xamppRoot . DIRECTORY_SEPARATOR . 'php' . DIRECTORY_SEPARATOR . 'php.exe';
 
     if (is_file($phpExe) && function_exists('shell_exec')) {
         $cmd = '"' . $phpExe . '" -i 2>NUL';
@@ -90,6 +89,30 @@ $apacheCurlRuntime = 'Unknown';
 $mysqlCurlRuntime  = 'Unknown';
 
 $xamppRoot = dirname($_SERVER['DOCUMENT_ROOT'] ?? __DIR__);
+
+// --- ZAMPP install path / Windows privilege ---
+$zamppInstallPath = $xamppRoot;
+
+function detectWindowsPrivilege(): string
+{
+    if (PHP_OS_FAMILY !== 'Windows') {
+        return 'Not Windows';
+    }
+
+    if (!function_exists('exec')) {
+        return 'Unavailable';
+    }
+
+    $output = [];
+    $exitCode = 1;
+
+    // "net session" succeeds only for an elevated Administrator/System process.
+    @exec('net session >NUL 2>&1', $output, $exitCode);
+
+    return $exitCode === 0 ? 'Administrator' : 'Standard user';
+}
+
+$windowsPrivilege = detectWindowsPrivilege();
 
 function normalizePathForCompare(string $path): string
 {
@@ -251,6 +274,8 @@ foreach ($versionFiles as $versionFile) {
 }
 
 $cards = [
+    ['label' => 'ZAMPP install path', 'value' => $zamppInstallPath, 'note' => 'Installation root', 'class' => 'runtime', 'value_class' => 'status-ok'],
+    ['label' => 'Windows privilege', 'value' => $windowsPrivilege, 'note' => 'Apache process', 'class' => 'runtime', 'value_class' => $windowsPrivilege === 'Administrator' ? 'status-ok' : 'status-warn'],
     ['label' => 'Apache', 'value' => $apache, 'note' => 'Web server', 'class' => 'apache'],
     ['label' => 'Apache cURL runtime', 'value' => $apacheCurlRuntime, 'note' => 'Apache DLL runtime', 'class' => 'runtime'],
     ['label' => 'phpMyAdmin', 'value' => $phpmyadmin, 'note' => 'Database UI', 'class' => 'pma'],
@@ -266,8 +291,8 @@ $cards = [
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to XAMPP</title>
-  <meta name="description" content="XAMPP is an easy to install Apache distribution containing MariaDB, PHP and Perl.">
+  <title>Welcome to ZAMPP 4.0.3</title>
+  <meta name="description" content="ZAMPP is an easy to install Apache distribution containing MariaDB, PHP and Perl.">
   <meta name="keywords" content="xampp, apache, php, perl, mariadb, open source distribution">
   <link href="/dashboard/stylesheets/normalize.css" rel="stylesheet" type="text/css">
   <link href="/dashboard/stylesheets/modern-dashboard.css" rel="stylesheet" type="text/css">
@@ -276,9 +301,9 @@ $cards = [
 <body>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a class="brand" href="/dashboard/index.php" aria-label="XAMPP Dashboard">
-        <img src="/dashboard/images/xampp-logo.svg" alt="XAMPP">
-        <span>XAMPP</span>
+      <a class="brand" href="/dashboard/index.php" aria-label="ZAMPP Dashboard">
+        <img src="/dashboard/images/xampp-logo.svg" alt="ZAMPP">
+        <span>ZAMPP</span>
       </a>
       <nav class="nav-links" aria-label="Dashboard navigation">
         <a href="/dashboard/faq.html">FAQs</a>
@@ -294,24 +319,15 @@ $cards = [
       <div class="container hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">Local development stack</p>
-          <h1>Welcome to XAMPP 4.0.0 for Windows</h1>
+          <h1>Welcome to ZAMPP 4.0.3 for Windows</h1>
           <p class="lead">
-  <strong>XAMPP 4.0.0</strong> is configured for local development with Apache, MariaDB, PHP, and Perl, plus an updated
-  control panel that supports selectable PHP versions. The active PHP runtime is managed through a
-  dedicated version selector, allowing projects to run against different PHP branches without manually
-  editing Apache configuration files.
-</p>
+				<p class="lead">
+					<strong>ZAMPP 4.0.3</strong> is configured for local development with Apache, MariaDB, PHP, and Perl, together with an updated control panel that supports selectable PHP versions. The active PHP runtime is managed through a dedicated version selector, allowing projects to run against different supported PHP branches without manually editing Apache configuration files.
+				</p>
 
-<p class="lead">
-  This dashboard helps confirm the active runtime, PHP cURL support, database status, and quick access
-  to common tools such as phpinfo and phpMyAdmin. It is also designed to verify that the current stack
-  was initialized correctly after first-run setup, including the active PHP path, Apache module loading,
-  and local development services.
-</p>
-		  
-		  
-		  
-		  
+				<p class="lead">
+					This dashboard provides a quick overview of the active ZAMPP environment, including the installation path, Apache process privilege level, active PHP version, PHP cURL support, Apache and database runtime components, MariaDB status, and installed PHP versions. It also provides direct access to common development tools such as PHPInfo and phpMyAdmin and helps confirm that the stack was initialized correctly after first-run setup.
+				</p> 
 		  
 		  <div class="hero-actions">
             <a class="button primary" href="/dashboard/phpinfo.php" target="_blank" rel="noopener">Open PHPInfo</a>
@@ -335,7 +351,7 @@ $cards = [
                   <span class="label"><?php echo h($card['label']); ?></span>
                   <small><?php echo h($card['note']); ?></small>
                 </div>
-                <strong class="value <?php echo h(statusClass($card['value'])); ?>"><?php echo h($card['value']); ?></strong>
+                <strong class="value <?php echo h($card['value_class'] ?? statusClass($card['value'])); ?>"><?php echo h($card['value']); ?></strong>
               </article>
             <?php endforeach; ?>
           </div>
@@ -368,7 +384,7 @@ $cards = [
     <section class="container content-grid">
       <article class="content-card">
         <h2>Getting started</h2>
-        <p>You have successfully installed XAMPP on this system. Start building PHP applications, test local sites, or manage databases with phpMyAdmin.</p>
+        <p>You have successfully installed ZAMPP on this system. Start building PHP applications, test local sites, or manage databases with phpMyAdmin.</p>
         <div class="quick-links">
           <a href="/dashboard/faq.html">Read FAQs</a>
           <a href="/dashboard/howto.html">View HOW-TO Guides</a>
@@ -378,20 +394,27 @@ $cards = [
 
       <article class="content-card warning-card">
         <h2>Development use only</h2>
-        <p><strong>XAMPP</strong> is configured for local development convenience. It is not hardened for public-facing production use without additional security changes.</p>
+        <p><strong>ZAMPP</strong> is configured for local development convenience. It is not hardened for public-facing production use without additional security changes.</p>
       </article>
 
       <article class="content-card notice-card">
-        <h2>Unofficial update notice</h2>
-        <p>This distribution represents a modified release from <strong>XAMPP 8.2.1</strong> and incorporates additional updates, patches, and configuration changes as outlined above. It is an <strong>"Independent Distribution"</strong> and is not affiliated with, endorsed by, or supported by Apache Friends or any associated community forums. This software is provided without any representations or warranties, express or implied. To the maximum extent permitted by applicable law, the distributor disclaims all liability for any damages or losses arising from the installation, use, or performance of this software, including but not limited to data loss, security vulnerabilities, service interruptions, or incompatibilities. By using this software, you acknowledge and accept full responsibility for any risks associated with its use. </p>
-      </article>
+  <h2><a href="https://zampp.org" target="_blank" rel="noopener">ZAMPP.ORG</a> Official Distribution Notice</h2>
+  <p>
+    This release is part of the <strong>ZAMPP Project</strong>, an independent Windows development environment maintained separately from XAMPP and Apache Friends. Although ZAMPP originated from an earlier XAMPP-based distribution, it now includes independently maintained updates, component upgrades, patches, configuration changes, control panel improvements, and project-specific modifications.
+  </p>
+ <p> ZAMPP is <strong>not an official XAMPP release</strong> and is not affiliated with, endorsed by, sponsored by, or maintained by Apache Friends. Official ZAMPP releases, project information, and updates are available through <a href="https://zampp.org" target="_blank" rel="noopener">ZAMPP.ORG</a> or the official <a href="https://github.com/zampp-project/xampp4" target="_blank" rel="noopener">ZAMPP GitHub Repository</a>. </p>
+  <p>
+    This software is provided without warranties, express or implied. To the maximum extent permitted by applicable law, the ZAMPP Project and its contributors are not liable for damages or losses resulting from installation or use, including data loss, service interruption, security issues, or software incompatibility. Users are responsible for maintaining appropriate backups and evaluating the software for their own environment.
+  </p>
+</article>
+
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="container footer-grid">
       <p>Copyright &copy; <?php echo date('Y'); ?> <a href="https://zampp.org" target="_blank" rel="noopener">ZAMPP.ORG</a></p>
-      <p>XAMPP_Control.exe and local dashboard for Apache + MariaDB + PHP + Perl · <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a></p>
+      <p>ZAMPP_Control.exe and local dashboard for Apache + MariaDB + PHP + Perl · <a href="https://zampp.org" target="_blank" rel="noopener">zampp.org</a></p>
     </div>
   </footer>
 </body>
