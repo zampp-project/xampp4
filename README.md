@@ -1,3 +1,21 @@
+# 📢 Release Notice: Temporary File Removal for v4.0.3
+
+In preparation for the upcoming **v4.0.3 release**, we are temporarily removing all PHP add-ons and specific legacy Windows installation packages.
+
+### 🚫 Affected Assets
+The following distribution files are temporarily unavailable for download:
+* `xampp-modernized-4.0.0-windows.zip`
+* `xampp-modernized-4.0.1-windows.zip`
+* `xampp-modernized-4.0.2-windows.zip`
+* All PHP add-on packages
+
+### 🔧 Reason for Removal
+These assets are being cleared to prevent version conflicts, streamline the archive, and ensure a clean, stable upgrade path to **v4.0.3**.
+
+
+Thank you for your patience as we prepare this update!
+
+
 # ZAMPP 4.0.1 Modernized for Windows
 
 > # IMPORTANT: DOWNLOAD RELEASES ONLY
