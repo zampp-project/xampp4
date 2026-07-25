@@ -1,4 +1,4 @@
-# This file was created by configpm when Perl was built. Any changes
+﻿# This file was created by configpm when Perl was built. Any changes
 # made to this file will be lost the next time perl is built.
 
 # for a description of the variables, please have a look at the
@@ -84,7 +84,7 @@ sub AUTOLOAD {
 
 # tie returns the object, so the value returned to require will be true.
 tie %Config, 'Config', {
-    archlibexp => '\D:\D:\\xampp\\perl\\lib',
+    archlibexp => 'D:\xampp',
     archname => 'MSWin32-x64-multi-thread',
     cc => 'gcc',
     d_readlink => undef,
@@ -96,14 +96,14 @@ tie %Config, 'Config', {
     inc_version_list => '',
     intsize => '4',
     ldlibpthname => '',
-    libpth => '\D:\D:\\xampp\\c\\lib D:\D:\D:\xampp\\c\\x86_64-w64-mingw32\\lib D:\D:\\xampp\\c\\lib\\gcc\\x86_64-w64-mingw32\\8.3.0',
+    libpth => 'D:\xampp D:\xampp\\c\\x86_64-w64-mingw32\\lib D:\xampp\\c\\lib\\gcc\\x86_64-w64-mingw32\\8.3.0',
     osname => 'MSWin32',
     osvers => '10.0.19042.746',
     path_sep => ';',
-    privlibexp => '\D:\D:\\xampp\\perl\\lib',
-    scriptdir => '\D:\D:\\xampp\\perl\\bin',
-    sitearchexp => '\D:\D:\\xampp\\perl\\site\\lib',
-    sitelibexp => '\D:\D:\\xampp\\perl\\site\\lib',
+    privlibexp => 'D:\xampp',
+    scriptdir => 'D:\xampp',
+    sitearchexp => 'D:\xampp',
+    sitelibexp => 'D:\xampp',
     so => 'dll',
     useithreads => 'define',
     usevendorprefix => 'define',
@@ -115,3 +115,4 @@ eval {
 };
 
 1;
+

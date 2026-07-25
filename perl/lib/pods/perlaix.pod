@@ -271,7 +271,7 @@ of these two (which is quite a lot easier than using gcc), be sure to
 upgrade to the latest available patch level. Currently:
 
     xlC.C     3.1.4.10 or 3.6.6.0 or 4.0.2.2 or 5.0.2.9 or 6.0.0.3
-    vac.C     4.4.0.3  or 5.0.2.6 or 6.0.0.1
+    vac.C     4.4.0.4  or 5.0.2.6 or 6.0.0.1
 
 note that xlC has the OS version in the name as of version 4.0.2.0, so
 you will find xlC.C for AIX-5.0 as package
@@ -342,7 +342,7 @@ was not possible using the emulated interface.
 
 All defaults for Configure can be used.
 
-If you've chosen to use vac 4, be sure to run 4.4.0.3. Older versions
+If you've chosen to use vac 4, be sure to run 4.4.0.4. Older versions
 will turn up nasty later on. For vac 5 be sure to run at least 5.0.1.0,
 but vac 5.0.2.6 or up is highly recommended. Note that since IBM has
 removed vac 5.0.2.1 through 5.0.2.5 from the software depot, these
@@ -356,7 +356,7 @@ in the developer snapshots of Perl), or to one version up where the
 "base" is available.  In other words, the AIX compiler patches are
 cumulative.
 
- vac.C.4.4.0.1 => vac.C.4.4.0.3  is OK     (vac.C.4.4.0.2 not needed)
+ vac.C.4.4.0.1 => vac.C.4.4.0.4  is OK     (vac.C.4.4.0.2 not needed)
  xlC.C.3.1.3.3 => xlC.C.3.1.4.10 is NOT OK (xlC.C.3.1.4.0 is not
                                                               available)
 

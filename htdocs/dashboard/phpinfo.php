@@ -50,7 +50,7 @@
   </header>
 <section class="page-hero">
   <div class="container">
-    <p class="page-eyebrow">ZAMPP 4.0.3 Dashboard</p>
+    <p class="page-eyebrow">ZAMPP 4.0.4 Dashboard</p>
     <h1 class="page-title">Welcome to ZAMPP</h1>
     <p class="page-lead">Dashboard resources and documentation.</p>
   </div>

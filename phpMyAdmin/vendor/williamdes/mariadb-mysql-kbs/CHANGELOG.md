@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [a38c721](https://github.com/williamdes/mariadb-mysql-kbs/commit/a38c72172a447069e8bbd08ffaf3620ebf17d121) [MySQL] updates
 - [435f5d2](https://github.com/williamdes/mariadb-mysql-kbs/commit/435f5d293be75297f6b0a583283e57067b429237) [MySQL] updates
 - [55c37c0](https://github.com/williamdes/mariadb-mysql-kbs/commit/55c37c05d704e742e548f83d22c317885507972e) [MySQL] updates
-- [70dafa1](https://github.com/williamdes/mariadb-mysql-kbs/commit/70dafa1643467fda7b757693a80657b7e410da50) 🤖 Some updates 🤖
+- [70dafa1](https://github.com/williamdes/mariadb-mysql-kbs/commit/70dafa1643467fda7b757693a80657b7e410da50) ?? Some updates ??
 - [0b67fa3](https://github.com/williamdes/mariadb-mysql-kbs/commit/0b67fa36a28a0edf8bb855fdb513bc2b68cde994) [MariaDB] && [MySQL] updates
 - [47ea5bf](https://github.com/williamdes/mariadb-mysql-kbs/commit/47ea5bfff1dd64df5d851de3ba5ceb7b8bf07290) [MariaDB] updates
 - [05c1792](https://github.com/williamdes/mariadb-mysql-kbs/commit/05c1792d53892faea152bace044cf10f51a15957) [MariaDB] && [MySQL] updates
@@ -134,7 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- [4e0db1e](https://github.com/williamdes/mariadb-mysql-kbs/commit/4e0db1e4fbfed4db6d7fee042f0127c8c6fe49f4) 🤖 Some updates 🤖
+- [4e0db1e](https://github.com/williamdes/mariadb-mysql-kbs/commit/4e0db1e4fbfed4db6d7fee042f0127c8c6fe49f4) ?? Some updates ??
 - [1a00fee](https://github.com/williamdes/mariadb-mysql-kbs/commit/1a00fee805173cdd16529890c5e1750acb18ec2f) [MariaDB] updates
 - [61dabb8](https://github.com/williamdes/mariadb-mysql-kbs/commit/61dabb8615870f257df510aa776847143015161e) [MariaDB] updates
 - [4191cc3](https://github.com/williamdes/mariadb-mysql-kbs/commit/4191cc3f6dca9c0b45f7fe9edb6546a5cb9c5fc3) [MariaDB] && [MySQL] updates
@@ -369,7 +369,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [c394c88](https://github.com/williamdes/mariadb-mysql-kbs/commit/c394c88150f5ec394f0de3e32eda8c1781594d0c) bump prettier from 2.3.1 to 2.3.2
 - [12cb0c7](https://github.com/williamdes/mariadb-mysql-kbs/commit/12cb0c705abedc4f7eca992fc8e32c41dc68b905) adjust lint and analyse CI config and run tests on PHP 8.1
 - [4dc1d57](https://github.com/williamdes/mariadb-mysql-kbs/commit/4dc1d57ec3a8c7054143decf3c59515b1ba143e4) bump glob-parent from 5.1.0 to 5.1.2
-- [eea7ab0](https://github.com/williamdes/mariadb-mysql-kbs/commit/eea7ab029bc359b9c23c2ae8a08287d8c0ee1a24) bump y18n from 4.0.0 to 4.0.3
+- [eea7ab0](https://github.com/williamdes/mariadb-mysql-kbs/commit/eea7ab029bc359b9c23c2ae8a08287d8c0ee1a24) bump y18n from 4.0.0 to 4.0.4
 - [64aa594](https://github.com/williamdes/mariadb-mysql-kbs/commit/64aa59415bc1c382999fc20a34b63f055d2d5b92) bump locutus from 2.0.14 to 2.0.15
 - [9c72287](https://github.com/williamdes/mariadb-mysql-kbs/commit/9c7228749af60ad40f2f522803a518bb21f54921) test on node 12, 14, 15, 16
 - [6954d32](https://github.com/williamdes/mariadb-mysql-kbs/commit/6954d326fdda0b041396997112fe3c45a56541c2) require node 12
@@ -420,7 +420,7 @@ What is wrong ? :/
 - [fce5e6a](https://github.com/williamdes/mariadb-mysql-kbs/commit/fce5e6ab7c105d8e1b9493724ea942ee8aea84c3) [MariaDB] && [MySQL] updates
 - [8aabb2b](https://github.com/williamdes/mariadb-mysql-kbs/commit/8aabb2b929f601a29645df0c8c55166f18e64a76) [MariaDB] && [MySQL] updates
 - [deaa820](https://github.com/williamdes/mariadb-mysql-kbs/commit/deaa8204e46a2af4947489d348a58331367d5d94) [MariaDB] && [MySQL] updates
-- [fd5e5de](https://github.com/williamdes/mariadb-mysql-kbs/commit/fd5e5de7c0019df37d905ae1e28ee4340d16cc51) 🤖 Some updates 🤖
+- [fd5e5de](https://github.com/williamdes/mariadb-mysql-kbs/commit/fd5e5de7c0019df37d905ae1e28ee4340d16cc51) ?? Some updates ??
 - [4278ad9](https://github.com/williamdes/mariadb-mysql-kbs/commit/4278ad9b212e6679d5c19d27d49f516f01f03863) [MariaDB] && [MySQL] updates
 - [37a7156](https://github.com/williamdes/mariadb-mysql-kbs/commit/37a7156d2027122955fc8087b1d056f54dd1ca74) [MariaDB] && [MySQL] updates
 - [74c152c](https://github.com/williamdes/mariadb-mysql-kbs/commit/74c152cc366fa0bd9fcdf5e774aa6a4002a52fa8) [MariaDB] updates
@@ -726,7 +726,7 @@ What is wrong ? :/
 ### Fixed
 
 - [4277ed2](https://github.com/williamdes/mariadb-mysql-kbs/commit/4277ed250f2500cb4c47253796f35dfba69d88b2) alert detected by lgtm
-- [3994f74](https://github.com/williamdes/mariadb-mysql-kbs/commit/3994f748e4f54ba8c0d0602a2802441ce6d6f4be) changelog 📖
+- [3994f74](https://github.com/williamdes/mariadb-mysql-kbs/commit/3994f748e4f54ba8c0d0602a2802441ce6d6f4be) changelog ??
 - [9324c2a](https://github.com/williamdes/mariadb-mysql-kbs/commit/9324c2a8f5904546ecb780ed57bedf7e055c8584) CI @sudo-bot script
 - [b8ab559](https://github.com/williamdes/mariadb-mysql-kbs/commit/b8ab5592c5d54a35a6767b3a10c26d7fd53a7689) MariaDB script
 - [5a183ac](https://github.com/williamdes/mariadb-mysql-kbs/commit/5a183ac7ebf5470c17b23b0e33608eebbed075ba) remove debug
@@ -762,12 +762,12 @@ What is wrong ? :/
 - [13d7ba4](https://github.com/williamdes/mariadb-mysql-kbs/commit/13d7ba4510e9957352790a02551eb247f4b17ad6) composer.json && updated: composer.lock
 - [7e80648](https://github.com/williamdes/mariadb-mysql-kbs/commit/7e80648f583ce760ab717a0a942bd6f576ede4bc) composer.lock
 - [affedaf](https://github.com/williamdes/mariadb-mysql-kbs/commit/affedaf9c5762fc01c5b6084b31f321de5e50140) package-lock.json and dependabot config
-- [0f8b1a0](https://github.com/williamdes/mariadb-mysql-kbs/commit/0f8b1a05978fc5d0573c0eacc23a97df17cc032e) changelog 📖
+- [0f8b1a0](https://github.com/williamdes/mariadb-mysql-kbs/commit/0f8b1a05978fc5d0573c0eacc23a97df17cc032e) changelog ??
 - [e031ee1](https://github.com/williamdes/mariadb-mysql-kbs/commit/e031ee1af193878dfccf7892c2aa553bc76f4f00) package.json & package-lock.json
 - [b4675f3](https://github.com/williamdes/mariadb-mysql-kbs/commit/b4675f313ad67ef4bee7a661014d0ffcf9911bd2) sudo-bot
 - [dd0ff5c](https://github.com/williamdes/mariadb-mysql-kbs/commit/dd0ff5c9448f65dde6d5ef829589e2115292aa20) [MySQL] & [MariaDB] data
 - [852b3a2](https://github.com/williamdes/mariadb-mysql-kbs/commit/852b3a2a527f620310fe2b90877d15ef315a60c9) composer.lock and package-lock.json and updated package.json
-- [ef766fd](https://github.com/williamdes/mariadb-mysql-kbs/commit/ef766fd9991e4fd1e80bb7b14abb2a352ecd4689) changelog 📖
+- [ef766fd](https://github.com/williamdes/mariadb-mysql-kbs/commit/ef766fd9991e4fd1e80bb7b14abb2a352ecd4689) changelog ??
 
 ### Removed
 

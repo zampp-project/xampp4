@@ -15,7 +15,7 @@ Runtime Bibliothek auf Ihrem System installiert ist.
   + Webalizer 2.23-04 (not included in the portable version)
   + Strawberry Perl 5.32.1.1 Portable
   + Tomcat 8.5.96
-  + XAMPP Control Panel Version 4.0.3.
+  + XAMPP Control Panel Version 4.0.4.
   + XAMPP mailToDisk 1.0 (schreibt verdendete Mails Ã¼ber PHP auf die Festplatte unter <xampp>\mailoutput. In der php.ini als Mail Default aktiviert.)
 
 ---------------------------------------------------------------

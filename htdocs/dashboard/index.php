@@ -291,7 +291,7 @@ $cards = [
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to ZAMPP 4.0.3</title>
+  <title>Welcome to ZAMPP 4.0.4</title>
   <meta name="description" content="ZAMPP is an easy to install Apache distribution containing MariaDB, PHP and Perl.">
   <meta name="keywords" content="xampp, apache, php, perl, mariadb, open source distribution">
   <link href="/dashboard/stylesheets/normalize.css" rel="stylesheet" type="text/css">
@@ -319,10 +319,10 @@ $cards = [
       <div class="container hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">Local development stack</p>
-          <h1>Welcome to ZAMPP 4.0.3 for Windows</h1>
+          <h1>Welcome to ZAMPP 4.0.4 for Windows</h1>
           <p class="lead">
 				<p class="lead">
-					<strong>ZAMPP 4.0.3</strong> is configured for local development with Apache, MariaDB, PHP, and Perl, together with an updated control panel that supports selectable PHP versions. The active PHP runtime is managed through a dedicated version selector, allowing projects to run against different supported PHP branches without manually editing Apache configuration files.
+					<strong>ZAMPP 4.0.4</strong> is configured for local development with Apache, MariaDB, PHP, and Perl, together with an updated control panel that supports selectable PHP versions. The active PHP runtime is managed through a dedicated version selector, allowing projects to run against different supported PHP branches without manually editing Apache configuration files.
 				</p>
 
 				<p class="lead">

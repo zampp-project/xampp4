@@ -15,7 +15,7 @@ libraries are installed on your system.
   + Webalizer 2.23-04 (not included in the portable version)
   + Strawberry Perl 5.32.1.1 Portable
   + Tomcat 8.5.96
-  + XAMPP Control Panel Version 4.0.3.
+  + XAMPP Control Panel Version 4.0.4.
   + XAMPP mailToDisk 1.0 (write emails via PHP on local disk in <xampp>\mailoutput. Activated in the php.ini as mail default.)
 
 ---------------------------------------------------------------
