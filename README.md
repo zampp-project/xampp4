@@ -1,4 +1,21 @@
-﻿# IMPORTANT PUBLICATION AND PROJECT NOTICE
+# DOWNLOAD ZAMPP 4.0.5 FROM RELEASES
+
+> [!WARNING]
+> **Do not use the repository source files as the installable ZAMPP package.**
+>
+> To install ZAMPP, use the **Releases** section shown on the right side of this GitHub repository and download the current packaged release:
+>
+> **ZAMPP 4.0.5 Modernized**
+>
+> Download the main ZAMPP ZIP from the release assets, extract it into a new clean folder, and run `zampp_control.exe` as Administrator.
+>
+> The repository source is intended for project development, review, maintenance, and contributions. It may not contain the generated, compiled, packaged, or sterilized files required for a complete end-user installation.
+>
+> **Regular users should install only from official ZAMPP GitHub Release assets.**
+
+---
+
+ # IMPORTANT PUBLICATION AND PROJECT NOTICE
 
 > [!IMPORTANT]
 > **ZAMPP is an independent software project and distribution. It is not XAMPP, is not an official XAMPP release, and is not affiliated with, endorsed by, sponsored by, or maintained by Apache Friends.**
