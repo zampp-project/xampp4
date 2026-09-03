@@ -271,18 +271,23 @@ These add-ons allow users to install additional PHP versions without downloading
 | PHP 7.4.33 | `php-7.4.33-addon.zip` | Legacy project compatibility |
 | PHP 8.2.12 | `php-8.2.12-addon.zip` | PHP 8.2 testing and support |
 | PHP 8.2.31 | `php-8.2.31-addon.zip` | Updated PHP 8.2 testing and support |
+| PHP 8.2.33* | `php-8.2.33-addon.zip` | Updated PHP 8.2 testing and support |
+| PHP 8.3.31 | `php-8.2.31-addon.zip` | Updated PHP 8.3 testing and support |
+| PHP 8.3.33* | `php-8.2.33-addon.zip` | Updated PHP 8.3 testing and support |
 | PHP 8.4.20 | `php-8.4.20-addon.zip` | PHP 8.4 testing and support |
 | PHP 8.4.22 | `php-8.4.22-addon.zip` | Updated PHP 8.4 testing and support |
 | PHP 8.4.24 | `php-8.4.24-addon.zip` | Current PHP 8.4 testing and support |
+| PHP 8.4.25* | `php-8.4.25-addon.zip` | Current PHP 8.4 testing and support |
 | PHP 8.5.4 | `php-8.5.4-addon.zip` | PHP 8.5 testing and support |
 | PHP 8.5.5 | `php-8.5.5-addon.zip` | PHP 8.5 testing and support |
 | PHP 8.5.6 | `php-8.5.6-addon.zip` | PHP 8.5 testing and support |
 | PHP 8.5.7 | `php-8.5.7-addon.zip` | PHP 8.5 testing and support |
 | PHP 8.5.8 | `php-8.5.8-addon.zip` | Bundled-version replacement or testing |
 | PHP 8.5.9 | `php-8.5.9-addon.zip` | Updated PHP 8.5 testing and support |
+| PHP 8.5.10* | `php-8.5.10-addon.zip` | Updated PHP 8.5 testing and support |
 
 PHP 8.5.8 is already bundled with the main package.
-
+* ADDED August 3, 2026
 You only need to download a PHP add-on when you want to add another PHP version.
 
 ---
