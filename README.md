@@ -288,6 +288,7 @@ These add-ons allow users to install additional PHP versions without downloading
 
 PHP 8.5.8 is already bundled with the main package.
 * ADDED August 3, 2026
+
 You only need to download a PHP add-on when you want to add another PHP version.
 
 ---
